@@ -12,8 +12,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
 .screen{display:none}.screen.active{display:block}
-
-/* AUTH */
 .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--bg3)}
 .auth-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:2rem;width:100%;max-width:380px;box-shadow:0 2px 24px rgba(0,0,0,.06)}
 .auth-logo{width:52px;height:52px;background:var(--green-bg);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem}
@@ -31,11 +29,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-full.secondary{background:transparent;border:1px solid var(--border2);color:var(--text);margin-top:8px}
 .btn-full.secondary:hover{background:var(--bg2)}
 .auth-divider{text-align:center;font-size:12px;color:var(--text3);margin:12px 0}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
-.role-btn{padding:12px 8px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s}
-.role-btn.active{border-color:var(--green);background:var(--green-bg);color:var(--green-dk)}
-
-/* MAIN */
 .main-page{min-height:100vh;background:var(--bg3)}
 .top-bar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1rem;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
 .top-logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;flex:1;min-width:0}
@@ -48,8 +41,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-ghost:hover{background:var(--bg2)}
 .avatar{width:34px;height:34px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--green);cursor:pointer;flex-shrink:0;border:1.5px solid var(--green)}
 .content{max-width:720px;margin:0 auto;padding:1.25rem 1rem}
-
-/* CONTROLS */
 .controls{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.25rem}
 .ctrl-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
 .ctrl-field label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
@@ -57,14 +48,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ctrl-field select:focus,.ctrl-field input:focus{outline:none;border-color:var(--green)}
 .btn-icon{height:38px;width:38px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
 .btn-icon:hover{background:var(--bg2)}
-
-/* SUMMARY */
 .summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem}
 .stat{flex:1;min-width:60px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:10px;text-align:center}
 .stat-n{font-size:20px;font-weight:600}
 .stat-l{font-size:10px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
-
-/* CATEGORIES */
 .cat-section{margin-bottom:10px}
 .cat-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:4px;cursor:pointer;user-select:none}
 .cat-hdr span{font-size:13px;font-weight:600;flex:1}
@@ -72,8 +59,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cat-chev{font-size:16px;color:var(--text2);transition:transform .2s}
 .cat-hdr.open .cat-chev{transform:rotate(180deg)}
 .prod-list{display:flex;flex-direction:column;gap:4px}
-
-/* PRODUCT ROW */
 .prod-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .prod-row:hover{border-color:var(--border2);box-shadow:0 1px 6px rgba(0,0,0,.06)}
 .prod-row.counted{border-left:3px solid var(--green)}
@@ -87,8 +72,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tag-pend{font-size:11px;color:var(--text2);background:var(--bg2);padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;border:0.5px solid var(--border)}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2)}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
-
-/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:1rem;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--border);width:100%;max-width:440px;max-height:92vh;overflow-y:auto}
@@ -120,8 +103,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mbtn-cancel{flex:1}
 .mbtn-del{color:var(--red);border-color:var(--red-b)}
 .mbtn-del:hover{background:var(--red-bg)}
-
-/* ADMIN PANEL */
 .admin-tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem}
 .admin-tab{padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);transition:all .15s}
 .admin-tab.active{color:var(--green);border-bottom-color:var(--green)}
@@ -139,8 +120,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-sm.ok{background:var(--green);color:#fff;border-color:var(--green)}
 .btn-sm.danger{color:var(--red);border-color:var(--red-b)}
 .btn-sm.danger:hover{background:var(--red-bg)}
-
-/* CONFIG */
 .cfg-content{max-width:600px;margin:0 auto;padding:1.25rem 1rem;display:flex;flex-direction:column;gap:1rem}
 .cfg-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
 .cfg-card h3{font-size:15px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:7px}
@@ -155,11 +134,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .status-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-bottom:10px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
 .dot-ok{background:var(--green)}.dot-err{background:#E24B4A}
-.info-card{border-color:var(--red-b);background:var(--red-bg)}
-.info-card h3{color:var(--red)}
-.code-block{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;font-size:12px;font-family:'Courier New',monospace;color:var(--text2);line-height:1.7;margin-top:8px}
-
-/* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;white-space:nowrap}
 .toast.show{opacity:1}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -169,7 +143,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <body>
 <div id="toast" class="toast"></div>
 
-<!-- ===== LOGIN ===== -->
+<!-- LOGIN -->
 <div id="scr-login" class="screen active">
   <div class="auth-page">
     <div class="auth-card">
@@ -178,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <p class="sub">Inicia sesión con tu cuenta</p>
       <div class="field"><label>Nombre de usuario</label><input type="text" id="l-name" placeholder="Tu nombre..." autocomplete="off"></div>
       <div class="field"><label>PIN (4 dígitos)</label><input type="password" id="l-pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
-      <div id="l-err" class="err-msg">Usuario o PIN incorrecto.</div>
+      <div id="l-err" class="err-msg"></div>
       <button class="btn-full" onclick="doLogin()">Entrar</button>
       <div class="auth-divider">¿No tienes cuenta?</div>
       <button class="btn-full secondary" onclick="showScreen('scr-signup')">Registrarse</button>
@@ -186,7 +160,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- ===== SIGNUP ===== -->
+<!-- SIGNUP -->
 <div id="scr-signup" class="screen">
   <div class="auth-page">
     <div class="auth-card">
@@ -196,7 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="field"><label>Nombre completo</label><input type="text" id="s-name" placeholder="Tu nombre..." autocomplete="off"></div>
       <div class="field"><label>PIN (4 dígitos)</label><input type="password" id="s-pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
       <div class="field"><label>Confirmar PIN</label><input type="password" id="s-pin2" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
-      <div id="s-err" class="err-msg">Revisa los datos e intenta de nuevo.</div>
+      <div id="s-err" class="err-msg"></div>
       <button class="btn-full" onclick="doSignup()">Solicitar acceso</button>
       <div class="auth-divider">¿Ya tienes cuenta?</div>
       <button class="btn-full secondary" onclick="showScreen('scr-login')">Iniciar sesión</button>
@@ -204,36 +178,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- ===== PENDING ===== -->
+<!-- PENDIENTE -->
 <div id="scr-pending" class="screen">
   <div class="auth-page">
     <div class="auth-card" style="text-align:center">
       <div class="auth-logo" style="margin:0 auto 1.5rem"><i class="ti ti-clock"></i></div>
       <h1>Solicitud enviada</h1>
-      <p class="sub" style="margin-bottom:1.5rem">Tu cuenta está pendiente de aprobación por un administrador. Regresa más tarde para iniciar sesión.</p>
+      <p class="sub" style="margin-bottom:1.5rem">Tu cuenta está pendiente de aprobación. Regresa más tarde para iniciar sesión.</p>
       <button class="btn-full secondary" onclick="showScreen('scr-login')">Volver al login</button>
     </div>
   </div>
 </div>
 
-<!-- ===== MAIN (ejecución) ===== -->
+<!-- MAIN EJECUCIÓN -->
 <div id="scr-main" class="screen">
   <div class="main-page">
     <div class="top-bar">
       <div class="top-logo"><i class="ti ti-building-store"></i><span>Misiones Chedraui</span></div>
       <span class="role-badge exec">Ejecución</span>
-      <div class="avatar" id="top-avatar-exec" onclick="logout()" title="Cerrar sesión">?</div>
+      <div class="avatar" id="av-exec" onclick="logout()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
       <div class="controls">
-        <div class="ctrl-field">
-          <label>Tienda</label>
-          <select id="sel-store"><option value="">— Seleccionar —</option></select>
-        </div>
-        <div class="ctrl-field">
-          <label>Buscar</label>
-          <input type="text" id="inp-search" placeholder="Nombre o EAN...">
-        </div>
+        <div class="ctrl-field"><label>Tienda</label><select id="sel-store"><option value="">— Seleccionar —</option></select></div>
+        <div class="ctrl-field"><label>Buscar</label><input type="text" id="inp-search" placeholder="Nombre o EAN..."></div>
         <button class="btn-icon" onclick="loadProducts()" title="Recargar"><i class="ti ti-refresh"></i></button>
       </div>
       <div id="summary-bar" class="summary" style="display:none"></div>
@@ -242,22 +210,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- ===== ADMIN ===== -->
+<!-- ADMIN -->
 <div id="scr-admin" class="screen">
   <div class="main-page">
     <div class="top-bar">
       <div class="top-logo"><i class="ti ti-building-store"></i><span>Misiones Chedraui</span></div>
       <span class="role-badge admin">Admin</span>
       <button class="btn-ghost" onclick="showScreen('scr-config')"><i class="ti ti-settings"></i></button>
-      <div class="avatar" id="top-avatar-admin" onclick="logout()" title="Cerrar sesión">?</div>
+      <div class="avatar" id="av-admin" onclick="logout()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
       <div class="admin-tabs">
         <div class="admin-tab active" onclick="switchTab('tab-conteos',this)">Conteos</div>
         <div class="admin-tab" onclick="switchTab('tab-usuarios',this)">Usuarios</div>
       </div>
-
-      <!-- TAB CONTEOS -->
       <div id="tab-conteos" class="admin-section active">
         <div class="controls">
           <div class="ctrl-field"><label>Tienda</label><select id="adm-sel-store"><option value="">— Todas —</option></select></div>
@@ -267,32 +233,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="adm-summary" class="summary" style="display:none"></div>
         <div id="adm-product-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div></div>
       </div>
-
-      <!-- TAB USUARIOS -->
       <div id="tab-usuarios" class="admin-section">
         <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
           <button class="btn-ghost" onclick="loadUsers()"><i class="ti ti-refresh"></i> Actualizar</button>
         </div>
-        <div id="users-area"><div class="empty-state"><i class="ti ti-users"></i>Cargando usuarios...</div></div>
+        <div id="users-area"><div class="empty-state"><i class="ti ti-users"></i>Cargando...</div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== CONFIG ===== -->
+<!-- CONFIG (solo admin) -->
 <div id="scr-config" class="screen">
   <div class="main-page">
     <div class="top-bar">
-      <button class="btn-ghost" id="cfg-back-btn" onclick="goBackFromConfig()"><i class="ti ti-arrow-left"></i> Volver</button>
+      <button class="btn-ghost" onclick="showScreen('scr-admin')"><i class="ti ti-arrow-left"></i> Volver</button>
       <div class="top-logo" style="justify-content:center">Configuración</div>
       <div style="width:80px"></div>
     </div>
     <div class="cfg-content">
       <div class="cfg-card">
         <h3><i class="ti ti-brand-google-drive" style="color:#4285F4"></i> Google Apps Script URL</h3>
-        <p>URL del Apps Script desplegado como app web. Permite leer productos, registrar usuarios y guardar conteos.</p>
-        <input class="cfg-input" type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/XXXXXXX/exec">
-        <div class="status-row"><span class="dot" id="cfg-dot"></span><span id="cfg-status">Sin configurar</span></div>
+        <p>URL del Apps Script. Ya viene pre-configurada — solo cámbiala si desplegaste una nueva versión.</p>
+        <input class="cfg-input" type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/...">
+        <div class="status-row"><span class="dot" id="cfg-dot"></span><span id="cfg-status">Sin verificar</span></div>
         <div class="cfg-btns">
           <button class="cfg-btn" onclick="testConnection()"><i class="ti ti-plug"></i> Probar</button>
           <button class="cfg-btn cfg-btn-primary" onclick="saveConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
@@ -303,22 +267,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <p>Sesión activa como: <strong id="cfg-uname">—</strong></p>
         <button class="cfg-btn" onclick="logout()" style="color:var(--red);border-color:var(--red-b)"><i class="ti ti-logout"></i> Cerrar sesión</button>
       </div>
-      <div class="cfg-card info-card">
-        <h3><i class="ti ti-info-circle"></i> Estructura del Google Sheet</h3>
-        <p>El Sheet necesita 3 pestañas con estos nombres exactos:</p>
-        <div class="code-block">
-          Pestaña 1: <strong>Productos</strong><br>
-          → tienda | categoria | ean | nombre | imagen<br><br>
-          Pestaña 2: <strong>Conteos</strong> (se crea automáticamente)<br><br>
-          Pestaña 3: <strong>Usuarios</strong> (se crea automáticamente)<br>
-          → nombre | pin | rol | tienda | estado
-        </div>
-      </div>
     </div>
   </div>
 </div>
 
-<!-- ===== MODAL ===== -->
+<!-- MODAL -->
 <div id="modal-overlay" class="modal-overlay" onclick="closeMod(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div id="mimg"></div>
@@ -330,13 +283,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session', K_COUNTS='wms_counts', K_CONFIG='wms_config';
+// URL pre-configurada — no necesitas cambiarla manualmente
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxxc0mmO9vAcqfc3QYBW8tezhkaoJ6-Twddht9jxcORPDY_JWPQ2bwGNwdKFiCKBp9PMg/exec';
 let session=null, storeData={}, counts={}, curProd=null;
 
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
 function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
 function toast(msg,dur=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
-function getUrl(){return(ls(K_CONFIG)||{}).url||''}
+function getUrl(){return(ls(K_CONFIG)||{}).url||DEFAULT_URL}
 
 // ===== AUTH =====
 async function doLogin(){
@@ -345,20 +300,13 @@ async function doLogin(){
   const err=document.getElementById('l-err');
   err.style.display='none';
   if(!name||pin.length!==4){err.textContent='Completa todos los campos.';err.style.display='block';return;}
-  const url=getUrl();
-  if(!url){err.textContent='Configura la URL del Apps Script primero.';err.style.display='block';showScreen('scr-config');return;}
   toast('Verificando...');
   try{
-    const r=await fetch(`${url}?action=login&nombre=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`);
+    const r=await fetch(`${getUrl()}?action=login&nombre=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`);
     const d=await r.json();
-    if(d.ok){
-      session={name:d.nombre,rol:d.rol,tienda:d.tienda};
-      lsSet(K_SESSION,session);
-      onLogin();
-    } else {
-      err.textContent=d.error||'Usuario o PIN incorrecto.';err.style.display='block';
-    }
-  }catch{err.textContent='Sin conexión. Verifica la URL.';err.style.display='block';}
+    if(d.ok){session={name:d.nombre,rol:d.rol,tienda:d.tienda};lsSet(K_SESSION,session);onLogin();}
+    else{err.textContent=d.error||'Usuario o PIN incorrecto.';err.style.display='block';}
+  }catch{err.textContent='Sin conexión. Intenta de nuevo.';err.style.display='block';}
 }
 
 async function doSignup(){
@@ -370,14 +318,12 @@ async function doSignup(){
   if(!name){err.textContent='Ingresa tu nombre.';err.style.display='block';return;}
   if(pin.length!==4||isNaN(Number(pin))){err.textContent='El PIN debe ser 4 dígitos numéricos.';err.style.display='block';return;}
   if(pin!==pin2){err.textContent='Los PINs no coinciden.';err.style.display='block';return;}
-  const url=getUrl();
-  if(!url){err.textContent='Configura la URL del Apps Script primero.';err.style.display='block';return;}
   toast('Enviando solicitud...');
   try{
     const params=new URLSearchParams({action:'signup',nombre:name,pin});
-    const r=await fetch(url,{method:'POST',body:params});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
     const d=await r.json();
-    if(d.ok){showScreen('scr-pending');}
+    if(d.ok)showScreen('scr-pending');
     else{err.textContent=d.error||'Error al registrarse.';err.style.display='block';}
   }catch{err.textContent='Sin conexión.';err.style.display='block';}
 }
@@ -385,17 +331,13 @@ async function doSignup(){
 function onLogin(){
   counts=ls(K_COUNTS)||{};
   const initials=session.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('top-avatar-exec').textContent=initials;
-  document.getElementById('top-avatar-admin').textContent=initials;
+  document.getElementById('av-exec').textContent=initials;
+  document.getElementById('av-admin').textContent=initials;
   document.getElementById('cfg-uname').textContent=session.name;
-  if(session.rol==='admin'){
-    showScreen('scr-admin');
-    loadProducts();
-    loadUsers();
-  } else {
-    showScreen('scr-main');
-    loadProducts();
-  }
+  const urlInput=document.getElementById('cfg-url');
+  urlInput.value=getUrl();
+  if(session.rol==='admin'){showScreen('scr-admin');loadProducts();loadUsers();}
+  else{showScreen('scr-main');loadProducts();}
 }
 
 function logout(){
@@ -405,16 +347,10 @@ function logout(){
   showScreen('scr-login');
 }
 
-function goBackFromConfig(){
-  if(session?.rol==='admin') showScreen('scr-admin');
-  else showScreen('scr-main');
-}
-
 // ===== CONFIG =====
-function saveConfig(){const url=document.getElementById('cfg-url').value.trim();lsSet(K_CONFIG,{url});toast('Guardado ✓')}
+function saveConfig(){const url=document.getElementById('cfg-url').value.trim();lsSet(K_CONFIG,{url});toast('URL guardada ✓')}
 async function testConnection(){
-  const url=document.getElementById('cfg-url').value.trim();
-  if(!url){alert('Ingresa la URL primero');return;}
+  const url=document.getElementById('cfg-url').value.trim()||DEFAULT_URL;
   const dot=document.getElementById('cfg-dot'),st=document.getElementById('cfg-status');
   st.innerHTML='<span class="spin">↻</span> Probando...';
   try{const r=await fetch(url+'?action=ping');const d=await r.json();
@@ -423,73 +359,46 @@ async function testConnection(){
   catch{dot.className='dot dot-err';st.textContent='No se pudo conectar';}
 }
 
-// ===== ADMIN TABS =====
+// ===== ADMIN =====
 function switchTab(id,el){
   document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');el.classList.add('active');
 }
 
-// ===== USERS =====
 async function loadUsers(){
   const area=document.getElementById('users-area');
   area.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
-  const url=getUrl();if(!url)return;
   try{
-    const r=await fetch(url+'?action=getUsers');const d=await r.json();
-    if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin usuarios registrados</div>';return;}
-    let html=`<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Tienda</th><th>Estado</th><th></th></tr></thead><tbody>`;
+    const r=await fetch(getUrl()+'?action=getUsers');const d=await r.json();
+    if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin usuarios</div>';return;}
+    let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Tienda</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
     d.data.forEach((u,i)=>{
-      const rolPill=u.rol==='admin'?'<span class="pill pill-admin">Admin</span>':'<span class="pill pill-exec">Ejecución</span>';
-      const estPill=u.estado==='activo'?'<span class="pill pill-exec">Activo</span>':'<span class="pill pill-pend">Pendiente</span>';
-      const approveBtn=u.estado!=='activo'?`<button class="btn-sm ok" onclick="approveUser(${i},'${u.nombre}')">Aprobar</button> `:'';
-      const rolBtn=u.rol!=='admin'?`<button class="btn-sm" onclick="setAdmin(${i},'${u.nombre}')">→ Admin</button> `:`<button class="btn-sm" onclick="setExec(${i},'${u.nombre}')">→ Ejec.</button> `;
-      const delBtn=`<button class="btn-sm danger" onclick="deleteUser(${i},'${u.nombre}')"><i class="ti ti-trash"></i></button>`;
-      html+=`<tr><td><strong>${u.nombre}</strong></td><td>${rolPill}</td><td>${u.tienda||'—'}</td><td>${estPill}</td><td style="display:flex;gap:4px;flex-wrap:wrap">${approveBtn}${rolBtn}${delBtn}</td></tr>`;
+      const rp=u.rol==='admin'?'<span class="pill pill-admin">Admin</span>':'<span class="pill pill-exec">Ejecución</span>';
+      const ep=u.estado==='activo'?'<span class="pill pill-exec">Activo</span>':'<span class="pill pill-pend">Pendiente</span>';
+      const ab=u.estado!=='activo'?`<button class="btn-sm ok" onclick="approveUser(${i},'${u.nombre}')">Aprobar</button> `:'';
+      const rb=u.rol!=='admin'?`<button class="btn-sm" onclick="setAdmin(${i},'${u.nombre}')">→ Admin</button>`:`<button class="btn-sm" onclick="setExec(${i},'${u.nombre}')">→ Ejec.</button>`;
+      const db=`<button class="btn-sm danger" onclick="deleteUser(${i},'${u.nombre}')"><i class="ti ti-trash"></i></button>`;
+      html+=`<tr><td><strong>${u.nombre}</strong></td><td>${rp}</td><td>${u.tienda||'—'}</td><td>${ep}</td><td style="display:flex;gap:4px;flex-wrap:wrap">${ab}${rb} ${db}</td></tr>`;
     });
     html+='</tbody></table></div>';
     area.innerHTML=html;
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error cargando usuarios</div>';}
 }
 
-async function approveUser(idx,nombre){
-  if(!confirm(`¿Aprobar a ${nombre}?`))return;
-  const url=getUrl();
-  const params=new URLSearchParams({action:'updateUser',idx,campo:'estado',valor:'activo'});
-  await fetch(url,{method:'POST',body:params});
-  toast('Usuario aprobado ✓');loadUsers();
-}
-async function setAdmin(idx,nombre){
-  if(!confirm(`¿Dar rol Admin a ${nombre}?`))return;
-  const url=getUrl();
-  const params=new URLSearchParams({action:'updateUser',idx,campo:'rol',valor:'admin'});
-  await fetch(url,{method:'POST',body:params});
-  toast('Rol actualizado ✓');loadUsers();
-}
-async function setExec(idx,nombre){
-  if(!confirm(`¿Cambiar a Ejecución a ${nombre}?`))return;
-  const url=getUrl();
-  const params=new URLSearchParams({action:'updateUser',idx,campo:'rol',valor:'ejecucion'});
-  await fetch(url,{method:'POST',body:params});
-  toast('Rol actualizado ✓');loadUsers();
-}
-async function deleteUser(idx,nombre){
-  if(!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`))return;
-  const url=getUrl();
-  const params=new URLSearchParams({action:'deleteUser',idx});
-  await fetch(url,{method:'POST',body:params});
-  toast('Usuario eliminado');loadUsers();
-}
+async function approveUser(idx,nombre){if(!confirm(`¿Aprobar a ${nombre}?`))return;await postAction({action:'updateUser',idx,campo:'estado',valor:'activo'});toast('Aprobado ✓');loadUsers();}
+async function setAdmin(idx,nombre){if(!confirm(`¿Dar rol Admin a ${nombre}?`))return;await postAction({action:'updateUser',idx,campo:'rol',valor:'admin'});toast('Rol actualizado ✓');loadUsers();}
+async function setExec(idx,nombre){if(!confirm(`¿Cambiar a Ejecución a ${nombre}?`))return;await postAction({action:'updateUser',idx,campo:'rol',valor:'ejecucion'});toast('Rol actualizado ✓');loadUsers();}
+async function deleteUser(idx,nombre){if(!confirm(`¿Eliminar a ${nombre}?`))return;await postAction({action:'deleteUser',idx});toast('Eliminado');loadUsers();}
+async function postAction(data){const params=new URLSearchParams(data);await fetch(getUrl(),{method:'POST',body:params});}
 
 // ===== PRODUCTS =====
 async function loadProducts(){
   const isAdmin=session?.rol==='admin';
   const areaId=isAdmin?'adm-product-area':'product-area';
   document.getElementById(areaId).innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando productos...</div>';
-  const url=getUrl();
-  if(!url){storeData=getDemoData();populateStores();render();toast('Modo demo — configura Apps Script');return;}
   try{
-    const r=await fetch(url+'?action=getProducts');const d=await r.json();
+    const r=await fetch(getUrl()+'?action=getProducts');const d=await r.json();
     if(d.ok){
       storeData={};
       d.data.forEach(row=>{
@@ -499,8 +408,8 @@ async function loadProducts(){
         storeData[tienda].categories[categoria].push({ean,name:nombre,img:imagen||''});
       });
       populateStores();render();toast('Productos cargados ✓');
-    }else{storeData=getDemoData();populateStores();render();toast('Error Sheets — datos demo');}
-  }catch{storeData=getDemoData();populateStores();render();toast('Sin conexión — datos demo');}
+    }else{toast('Error al cargar productos');}
+  }catch{toast('Sin conexión');}
 }
 
 function populateStores(){
@@ -510,26 +419,16 @@ function populateStores(){
   const prev=sel.value;
   sel.innerHTML='<option value="">— Seleccionar tienda —</option>';
   let stores=Object.keys(storeData);
-  // Ejecución: solo ve su tienda asignada
-  if(!isAdmin&&session?.tienda&&session.tienda.trim()!==''){
-    stores=stores.filter(s=>s===session.tienda||storeData[s].name===session.tienda);
-  }
-  stores.forEach(id=>{
-    const o=document.createElement('option');
-    o.value=id;o.textContent=id+' — '+(storeData[id].name||id);
-    sel.appendChild(o);
-  });
+  if(!isAdmin&&session?.tienda&&session.tienda.trim()!=='')
+    stores=stores.filter(s=>s===session.tienda||storeData[s]?.name===session.tienda);
+  stores.forEach(id=>{const o=document.createElement('option');o.value=id;o.textContent=id+' — '+(storeData[id].name||id);sel.appendChild(o);});
   if(prev&&storeData[prev])sel.value=prev;
 }
 
-['sel-store','adm-sel-store'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('change',render);
-});
-['inp-search','adm-search'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('input',render);
-});
+document.getElementById('sel-store').addEventListener('change',render);
+document.getElementById('inp-search').addEventListener('input',render);
+document.getElementById('adm-sel-store').addEventListener('change',render);
+document.getElementById('adm-search').addEventListener('input',render);
 
 function render(){
   const isAdmin=session?.rol==='admin';
@@ -537,8 +436,7 @@ function render(){
   const q=document.getElementById(isAdmin?'adm-search':'inp-search').value.toLowerCase().trim();
   const areaId=isAdmin?'adm-product-area':'product-area';
   const sumId=isAdmin?'adm-summary':'summary-bar';
-  const area=document.getElementById(areaId);
-  const sumBar=document.getElementById(sumId);
+  const area=document.getElementById(areaId),sumBar=document.getElementById(sumId);
   if(!storeId){area.innerHTML='<div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div>';sumBar.style.display='none';return;}
   const store=storeData[storeId];
   let html='',total=0,counted=0,pkCnt=0,bdCnt=0,bothCnt=0;
@@ -549,15 +447,15 @@ function render(){
     html+=`<div class="cat-section"><div class="cat-hdr open" onclick="toggleCat(this)"><i class="ti ti-tag" style="font-size:14px;color:var(--text2)"></i><span>${cat}</span><span class="cat-badge">${cc}/${fil.length}</span><i class="ti ti-chevron-down cat-chev"></i></div><div class="prod-list">`;
     fil.forEach(p=>{
       const key=storeId+'_'+p.ean,c=counts[key];
-      total++;let tagHtml='<span class="tag-pend">Pendiente</span>';
+      total++;let tag='<span class="tag-pend">Pendiente</span>';
       if(c){counted++;const hp=c.qty_picking>0,hb=c.qty_bodega>0;
-        if(hp&&hb){bothCnt++;tagHtml=`<span class="tag-ok"><i class="ti ti-check"></i> P:${c.qty_picking} B:${c.qty_bodega}</span>`;}
-        else if(hp){pkCnt++;tagHtml=`<span class="tag-ok"><i class="ti ti-check"></i> Pick:${c.qty_picking}</span>`;}
-        else if(hb){bdCnt++;tagHtml=`<span class="tag-ok"><i class="ti ti-check"></i> Bod:${c.qty_bodega}</span>`;}
+        if(hp&&hb){bothCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> P:${c.qty_picking} B:${c.qty_bodega}</span>`;}
+        else if(hp){pkCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Pick:${c.qty_picking}</span>`;}
+        else if(hb){bdCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Bod:${c.qty_bodega}</span>`;}
       }
-      const thumbId='th_'+p.ean.replace(/\W/g,'_');
-      const thumb=p.img?`<div class="prod-thumb" id="${thumbId}"></div>`:`<div class="prod-ph"><i class="ti ti-photo"></i></div>`;
-      html+=`<div class="prod-row${c?' counted':''}" onclick="openProd('${storeId}','${p.ean}')" role="button" tabindex="0">${thumb}<div class="prod-info"><div class="prod-name">${p.name}</div><div class="prod-ean">${p.ean}</div></div>${tagHtml}</div>`;
+      const tid='th_'+p.ean.replace(/\W/g,'_');
+      const thumb=p.img?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-photo"></i></div>`;
+      html+=`<div class="prod-row${c?' counted':''}" onclick="openProd('${storeId}','${p.ean}')" role="button" tabindex="0">${thumb}<div class="prod-info"><div class="prod-name">${p.name}</div><div class="prod-ean">${p.ean}</div></div>${tag}</div>`;
     });
     html+='</div></div>';
   });
@@ -571,19 +469,12 @@ function render(){
 
 function toggleCat(el){el.classList.toggle('open');const l=el.nextSibling;l.style.display=el.classList.contains('open')?'flex':'none';l.style.flexDirection='column';}
 
-// ===== EXIF FIX =====
 function fixedImg(url,targetId,isBanner){
   if(!url)return;
-  try{
-    loadImage(url,(canvas)=>{
-      const el=document.getElementById(targetId);if(!el)return;
-      if(canvas.type==='error'||!canvas.toDataURL){el.style.backgroundImage=`url('${url}')`;return;}
-      el.style.backgroundImage=`url('${canvas.toDataURL('image/jpeg',0.9)}')`;
-    },{maxWidth:isBanner?880:184,maxHeight:isBanner?400:184,orientation:true,canvas:true});
-  }catch{const el=document.getElementById(targetId);if(el)el.style.backgroundImage=`url('${url}')`;}
+  try{loadImage(url,(canvas)=>{const el=document.getElementById(targetId);if(!el)return;if(canvas.type==='error'||!canvas.toDataURL){el.style.backgroundImage=`url('${url}')`;return;}el.style.backgroundImage=`url('${canvas.toDataURL('image/jpeg',0.9)}')`;},{maxWidth:isBanner?880:184,maxHeight:isBanner?400:184,orientation:true,canvas:true});}
+  catch{const el=document.getElementById(targetId);if(el)el.style.backgroundImage=`url('${url}')`;}
 }
 
-// ===== MODAL =====
 function findProd(sid,ean){const s=storeData[sid];for(const[cat,prods]of Object.entries(s.categories)){const p=prods.find(x=>x.ean===ean);if(p)return{p,cat};}return null;}
 
 function openProd(sid,ean){
@@ -609,8 +500,13 @@ async function saveCnt(){
   const key=curProd.sid+'_'+curProd.ean;
   const record={qty_picking:nP,qty_bodega:nB,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat};
   counts[key]=record;lsSet(K_COUNTS,counts);
-  closeMod();render();toast('Guardando en Sheets...');
-  await pushToSheets(record);
+  closeMod();render();toast('Guardando...');
+  try{
+    const params=new URLSearchParams({action:'saveCount',...record});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(d.ok)toast('Guardado en Google Sheets ✓');else toast('Error: '+d.error);
+  }catch{toast('Sin conexión — guardado local');}
 }
 
 async function deleteCnt(){
@@ -619,23 +515,9 @@ async function deleteCnt(){
   lsSet(K_COUNTS,counts);closeMod();render();toast('Conteo eliminado');
 }
 
-async function pushToSheets(record){
-  const url=getUrl();if(!url){toast('Sin URL — guardado local');return;}
-  try{
-    const params=new URLSearchParams({action:'saveCount',...record});
-    const r=await fetch(url,{method:'POST',body:params});
-    const d=await r.json();
-    if(d.ok)toast('Guardado en Google Sheets ✓');else toast('Error: '+d.error);
-  }catch{toast('Sin conexión — guardado local');}
-}
-
-// ===== DEMO DATA =====
-function getDemoData(){return{"TDA-001":{name:"Tienda Centro",categories:{"Lácteos":[{ean:"7501055300096",name:"Leche Lala Entera 1L",img:"https://images.unsplash.com/photo-1563636619-e9143da7973b?w=200&q=80"}],"Bebidas":[{ean:"7501055360168",name:"Coca-Cola 600ml",img:"https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200&q=80"}]}},"TDA-002":{name:"Tienda Norte",categories:{"Frutas":[{ean:"7501234600019",name:"Manzana Gala 1kg",img:"https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=200&q=80"}]}}};}
-
 // ===== INIT =====
 const savedSession=ls(K_SESSION);
-if(savedSession){session=savedSession;const cfg=ls(K_CONFIG)||{};if(cfg.url)document.getElementById('cfg-url').value=cfg.url;onLogin();}
-else{const cfg=ls(K_CONFIG)||{};if(cfg.url)document.getElementById('cfg-url').value=cfg.url;}
+if(savedSession){session=savedSession;onLogin();}
 </script>
 </body>
 </html>
