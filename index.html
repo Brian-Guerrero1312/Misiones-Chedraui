@@ -406,22 +406,27 @@ async function syncConteos(tienda, silent=true) {
     const r = await fetch(`${getUrl()}?action=getConteos&tienda=${encodeURIComponent(tienda)}`);
     const d = await r.json();
     if (!d.ok) return;
-    // Merge: Sheets tiene prioridad sobre localStorage
+
+    // Borrar todos los conteos locales de esta tienda
+    Object.keys(counts).forEach(k => { if (k.startsWith(tienda + '_')) delete counts[k]; });
+
+    // Reemplazar con lo que viene de Sheets
     d.data.forEach(c => {
       const key = c.tienda + '_' + c.ean;
       counts[key] = {
-        qty_picking: c.qty_picking,
-        qty_bodega:  c.qty_bodega,
-        pick_active: c.qty_picking > 0 || (counts[key]?.pick_active),
-        bod_active:  c.qty_bodega  > 0 || (counts[key]?.bod_active),
-        usuario:     c.usuario,
-        ts:          c.ts,
-        ean:         c.ean,
-        nombre:      c.nombre,
-        tienda:      c.tienda,
-        categoria:   c.categoria
+        qty_picking:  c.qty_picking,
+        qty_bodega:   c.qty_bodega,
+        pick_active:  c.qty_picking > 0,
+        bod_active:   c.qty_bodega  > 0,
+        usuario:      c.usuario,
+        ts:           c.ts,
+        ean:          c.ean,
+        nombre:       c.nombre,
+        tienda:       c.tienda,
+        categoria:    c.categoria
       };
     });
+
     lsSet(K_COUNTS, counts);
     render();
     if (!silent) toast('Conteos actualizados ✓');
