@@ -341,10 +341,12 @@ function onLogin(){
   urlInput.value=getUrl();
   if(session.rol==='admin'){showScreen('scr-admin');loadProducts();loadUsers();}
   else{showScreen('scr-main');loadProducts();}
+  startAutoSync();
 }
 
 function logout(){
   if(!confirm('¿Cerrar sesión?'))return;
+  stopAutoSync();
   session=null;localStorage.removeItem(K_SESSION);
   document.getElementById('l-name').value='';document.getElementById('l-pin').value='';
   showScreen('scr-login');
@@ -395,7 +397,50 @@ async function setExec(idx,nombre){if(!confirm(`¿Cambiar a Ejecución a ${nombr
 async function deleteUser(idx,nombre){if(!confirm(`¿Eliminar a ${nombre}?`))return;await postAction({action:'deleteUser',idx});toast('Eliminado');loadUsers();}
 async function postAction(data){const params=new URLSearchParams(data);await fetch(getUrl(),{method:'POST',body:params});}
 
-// ===== PRODUCTS =====
+// ===== SYNC CONTEOS DESDE SHEETS =====
+let syncInterval = null;
+
+async function syncConteos(tienda, silent=true) {
+  if (!tienda) return;
+  try {
+    const r = await fetch(`${getUrl()}?action=getConteos&tienda=${encodeURIComponent(tienda)}`);
+    const d = await r.json();
+    if (!d.ok) return;
+    // Merge: Sheets tiene prioridad sobre localStorage
+    d.data.forEach(c => {
+      const key = c.tienda + '_' + c.ean;
+      counts[key] = {
+        qty_picking: c.qty_picking,
+        qty_bodega:  c.qty_bodega,
+        pick_active: c.qty_picking > 0 || (counts[key]?.pick_active),
+        bod_active:  c.qty_bodega  > 0 || (counts[key]?.bod_active),
+        usuario:     c.usuario,
+        ts:          c.ts,
+        ean:         c.ean,
+        nombre:      c.nombre,
+        tienda:      c.tienda,
+        categoria:   c.categoria
+      };
+    });
+    lsSet(K_COUNTS, counts);
+    render();
+    if (!silent) toast('Conteos actualizados ✓');
+  } catch { /* silencioso */ }
+}
+
+function startAutoSync() {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(() => {
+    const isAdmin = session?.rol === 'admin';
+    const storeId = document.getElementById(isAdmin ? 'adm-sel-store' : 'sel-store').value;
+    if (storeId) syncConteos(storeId, true);
+  }, 2 * 60 * 1000); // cada 2 minutos
+}
+
+function stopAutoSync() {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = null;
+}
 async function loadProducts(){
   const isAdmin=session?.rol==='admin';
   const areaId=isAdmin?'adm-product-area':'product-area';
@@ -428,10 +473,18 @@ function populateStores(){
   if(prev&&storeData[prev])sel.value=prev;
 }
 
-document.getElementById('sel-store').addEventListener('change',render);
-document.getElementById('inp-search').addEventListener('input',render);
-document.getElementById('adm-sel-store').addEventListener('change',render);
-document.getElementById('adm-search').addEventListener('input',render);
+document.getElementById('sel-store').addEventListener('change', () => {
+  const storeId = document.getElementById('sel-store').value;
+  if (storeId) syncConteos(storeId, false);
+  render();
+});
+document.getElementById('inp-search').addEventListener('input', render);
+document.getElementById('adm-sel-store').addEventListener('change', () => {
+  const storeId = document.getElementById('adm-sel-store').value;
+  if (storeId) syncConteos(storeId, false);
+  render();
+});
+document.getElementById('adm-search').addEventListener('input', render);
 
 function render(){
   const isAdmin=session?.rol==='admin';
@@ -491,7 +544,11 @@ function openProd(sid,ean){
   const qP=ex?.qty_picking??0, qB=ex?.qty_bodega??0;
   const chkP=hasPick?`<i class="ti ti-check" style="font-size:12px;color:#fff"></i>`:'';
   const chkB=hasBod?`<i class="ti ti-check" style="font-size:12px;color:#fff"></i>`:'';
+  const otherWarn=ex&&ex.usuario&&ex.usuario!==session.name
+    ?`<div style="background:#FFF8E1;border:1px solid #F9A825;border-radius:var(--r);padding:10px 12px;font-size:12px;color:#7A5800;display:flex;align-items:center;gap:8px"><i class="ti ti-alert-triangle" style="font-size:18px;flex-shrink:0"></i><span>Ya contado por <strong>${ex.usuario}</strong> el ${new Date(ex.ts).toLocaleString('es-MX')}. Puedes editar si es necesario.</span></div>`
+    :'';
   document.getElementById('mbody').innerHTML=`
+    ${otherWarn}
     <div class="mfield">
       <label>Toca la ubicación para activarla</label>
       <div class="ubic-dual">
