@@ -485,14 +485,17 @@ async function syncConteos(tienda,silent=true){
     const prefix=tienda+'_';
     Object.keys(counts).forEach(k=>{if(k.startsWith(prefix))delete counts[k];});
     d.data.forEach(c=>{
-      // Ignorar solo filas sin usuario y sin ninguna ubicación activa
-      if(!c.usuario && !c.pick_active && !c.bod_active) return;
+      // Si tiene usuario = fue contado, sin importar la cantidad
+      if(!c.usuario) return;
       const key=tienda+'_'+c.ean;
+      // Si ambas cantidades son 0 pero hay usuario, al menos una ubicación se considera activa
+      const pickActive = c.pick_active || c.qty_picking > 0 || (c.qty_picking === 0 && c.qty_bodega === 0);
+      const bodActive  = c.bod_active  || c.qty_bodega  > 0;
       counts[key]={
         qty_picking: c.qty_picking,
         qty_bodega:  c.qty_bodega,
-        pick_active: c.pick_active, // viene de Sheets, refleja si se activó aunque qty=0
-        bod_active:  c.bod_active,
+        pick_active: pickActive,
+        bod_active:  bodActive,
         usuario:     c.usuario,
         ts:          c.ts,
         ean:         c.ean,
@@ -642,9 +645,12 @@ function render(){
       const key=storeId+'_'+p.ean,c=counts[key];
       total++;
       const isMe=c&&c.usuario===session.name;
-      const hp=c&&(c.pick_active||c.qty_picking>0),hb=c&&(c.bod_active||c.qty_bodega>0);
+      const hp=c&&(c.pick_active||c.qty_picking>0);
+      const hb=c&&(c.bod_active||c.qty_bodega>0);
+      // Si tiene usuario = contado, aunque qty sea 0 en ambas ubicaciones
+      const isCounted=c&&c.usuario;
       let tag='<span class="tag-pend">Pendiente</span>',rowClass='',byLine='';
-      if(c&&(hp||hb)){
+      if(isCounted){
         counted++;
         const tagClass=isMe?'tag-ok-me':'tag-ok-other';
         rowClass=isMe?' counted-me':' counted-other';
@@ -652,7 +658,7 @@ function render(){
         if(hp&&hb){bothCnt++;tag=`<span class="${tagClass}">P:${c.qty_picking} B:${c.qty_bodega}</span>`;}
         else if(hp){pkCnt++;tag=`<span class="${tagClass}">Pick:${c.qty_picking}</span>`;}
         else if(hb){bdCnt++;tag=`<span class="${tagClass}">Bod:${c.qty_bodega}</span>`;}
-        else{counted--;tag='<span class="tag-pend">Pendiente</span>';rowClass='';}
+        else{tag=`<span class="${tagClass}"><i class="ti ti-check"></i> Sin stock</span>`;}
       }
       const tid='th_'+p.ean.replace(/\W/g,'_');
       const thumb=p.img?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-photo"></i></div>`;
