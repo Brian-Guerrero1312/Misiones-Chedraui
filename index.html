@@ -88,12 +88,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mfield input{padding:9px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;transition:border-color .15s;width:100%}
 .mfield input:focus{outline:none;border-color:var(--green)}
 .ubic-dual{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ubic-box{border:1px solid var(--border2);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--bg2);transition:all .15s}
-.ubic-box-label{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--text2)}
-.ubic-box input{padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:15px;font-weight:600;text-align:center}
-.ubic-box input:focus{outline:none;border-color:var(--green)}
-.ubic-box.has-val{border-color:var(--green);background:var(--green-bg)}
-.ubic-box.has-val .ubic-box-label{color:var(--green-dk)}
+.ubic-box{border:1px solid var(--border2);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg2);transition:all .15s;opacity:.5}
+.ubic-box.active{opacity:1;border-color:var(--green);background:var(--green-bg)}
+.ubic-box-label{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer}
+.ubic-box.active .ubic-box-label{color:var(--green-dk)}
+.ubic-toggle{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.ubic-box.active .ubic-toggle{background:var(--green);border-color:var(--green)}
+.ubic-box input[type=number]{padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:18px;font-weight:600;text-align:center;width:100%;display:none}
+.ubic-box.active input[type=number]{display:block}
+.ubic-box input[type=number]:focus{outline:none;border-color:var(--green)}
 .meta-info{font-size:11px;color:var(--text3);padding:4px 0}
 .modal-foot{display:flex;gap:8px;padding:1rem 1.25rem;border-top:0.5px solid var(--border)}
 .mbtn{padding:9px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text);transition:all .15s}
@@ -448,7 +451,7 @@ function render(){
     fil.forEach(p=>{
       const key=storeId+'_'+p.ean,c=counts[key];
       total++;let tag='<span class="tag-pend">Pendiente</span>';
-      if(c){counted++;const hp=c.qty_picking>0,hb=c.qty_bodega>0;
+      if(c){counted++;const hp=c.pick_active,hb=c.bod_active;
         if(hp&&hb){bothCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> P:${c.qty_picking} B:${c.qty_bodega}</span>`;}
         else if(hp){pkCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Pick:${c.qty_picking}</span>`;}
         else if(hb){bdCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Bod:${c.qty_bodega}</span>`;}
@@ -484,21 +487,47 @@ function openProd(sid,ean){
   document.getElementById('mimg').innerHTML=p.img?`<div class="modal-img-banner" id="modal-banner"></div>`:`<div class="modal-img-ph"><i class="ti ti-photo"></i></div>`;
   if(p.img)fixedImg(p.img,'modal-banner',true);
   document.getElementById('mhead').innerHTML=`<div class="modal-title">${p.name}</div><div class="modal-ean">${p.ean}</div><div class="modal-cat">${cat}</div>`;
-  const qP=ex?.qty_picking??'',qB=ex?.qty_bodega??'';
-  document.getElementById('mbody').innerHTML=`<div class="mfield"><label>Cantidad por ubicación</label><div class="ubic-dual"><div class="ubic-box${qP>0?' has-val':''}" id="box-pick"><div class="ubic-box-label"><i class="ti ti-forklift"></i> Picking</div><input type="number" id="f-pick" min="0" value="${qP}" placeholder="0" oninput="updateBox('pick')"></div><div class="ubic-box${qB>0?' has-val':''}" id="box-bod"><div class="ubic-box-label"><i class="ti ti-building-warehouse"></i> Bodega</div><input type="number" id="f-bod" min="0" value="${qB}" placeholder="0" oninput="updateBox('bod')"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">Deja en 0 si no hay stock en esa ubicación</div></div>${ex?`<div class="meta-info">Registrado por <strong>${ex.usuario}</strong> · ${new Date(ex.ts).toLocaleString('es-MX')}</div>`:''}`;
+  const hasPick=ex&&ex.pick_active, hasBod=ex&&ex.bod_active;
+  const qP=ex?.qty_picking??0, qB=ex?.qty_bodega??0;
+  const chkP=hasPick?`<i class="ti ti-check" style="font-size:12px;color:#fff"></i>`:'';
+  const chkB=hasBod?`<i class="ti ti-check" style="font-size:12px;color:#fff"></i>`:'';
+  document.getElementById('mbody').innerHTML=`
+    <div class="mfield">
+      <label>Toca la ubicación para activarla</label>
+      <div class="ubic-dual">
+        <div class="ubic-box${hasPick?' active':''}" id="box-pick" onclick="toggleBox('pick')">
+          <div class="ubic-box-label"><div class="ubic-toggle" id="chk-pick">${chkP}</div><i class="ti ti-forklift"></i> Picking</div>
+          <input type="number" id="f-pick" min="0" value="${qP}" onclick="event.stopPropagation()">
+        </div>
+        <div class="ubic-box${hasBod?' active':''}" id="box-bod" onclick="toggleBox('bod')">
+          <div class="ubic-box-label"><div class="ubic-toggle" id="chk-bod">${chkB}</div><i class="ti ti-building-warehouse"></i> Bodega</div>
+          <input type="number" id="f-bod" min="0" value="${qB}" onclick="event.stopPropagation()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Puedes registrar 0 si el producto existe pero no hay stock.</div>
+    </div>
+    ${ex?`<div class="meta-info">Registrado por <strong>${ex.usuario}</strong> · ${new Date(ex.ts).toLocaleString('es-MX')}</div>`:''}`;
   document.getElementById('mfoot').innerHTML=`${ex?`<button class="mbtn mbtn-del" onclick="deleteCnt()"><i class="ti ti-trash"></i></button>`:''}<button class="mbtn mbtn-cancel" onclick="closeMod()">Cancelar</button><button class="mbtn mbtn-ok" onclick="saveCnt()"><i class="ti ti-check"></i> Guardar</button>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function updateBox(w){const v=Number(document.getElementById('f-'+w).value);document.getElementById('box-'+w).classList.toggle('has-val',v>0);}
+function toggleBox(w){
+  const box=document.getElementById('box-'+w);
+  const isActive=box.classList.toggle('active');
+  const chk=document.getElementById('chk-'+w);
+  chk.innerHTML=isActive?`<i class="ti ti-check" style="font-size:12px;color:#fff"></i>`:'';
+}
 function closeMod(e){if(e&&e.target!==document.getElementById('modal-overlay'))return;document.getElementById('modal-overlay').classList.remove('open');}
 
 async function saveCnt(){
-  const qP=document.getElementById('f-pick').value,qB=document.getElementById('f-bod').value;
-  const nP=qP===''?0:Number(qP),nB=qB===''?0:Number(qB);
-  if(nP===0&&nB===0){alert('Ingresa al menos una cantidad');return;}
+  const pickActive=document.getElementById('box-pick').classList.contains('active');
+  const bodActive=document.getElementById('box-bod').classList.contains('active');
+  if(!pickActive&&!bodActive){alert('Activa al menos una ubicación (Picking o Bodega)');return;}
+  const nP=pickActive?Number(document.getElementById('f-pick').value||0):null;
+  const nB=bodActive?Number(document.getElementById('f-bod').value||0):null;
+  if(nP===0&&nB===0){}
   const key=curProd.sid+'_'+curProd.ean;
-  const record={qty_picking:nP,qty_bodega:nB,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat};
+  const record={qty_picking:nP??0,qty_bodega:nB??0,pick_active:pickActive,bod_active:bodActive,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat};
   counts[key]=record;lsSet(K_COUNTS,counts);
   closeMod();render();toast('Guardando...');
   try{
