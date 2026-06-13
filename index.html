@@ -693,13 +693,35 @@ function renderMiniDash(storeId){
   });
   if(!Object.keys(byUser).length){dash.style.display='none';return;}
   dash.style.display='block';
+  const totalCounted=Object.values(byUser).reduce((s,d)=>s+d.cnt,0);
+  const pctGlobal=total?Math.round(totalCounted/total*100):0;
   let rows='';
   Object.entries(byUser).sort((a,b)=>b[1].cnt-a[1].cnt).forEach(([u,d])=>{
     const pct=total?Math.round(d.cnt/total*100):0;
     const isMe=u===session.name;
     rows+=`<div class="prod-dash-row${isMe?' my-highlight':''}"><div class="prod-dash-name">${isMe?'<strong>Yo</strong>':u}</div><div class="prod-dash-bar-wrap"><div class="prod-dash-bar" style="width:${pct}%"></div></div><div class="prod-dash-pct">${pct}%</div><div class="prod-dash-cnt">${d.cnt}/${total}</div></div>`;
   });
-  dash.innerHTML=`<div class="prod-dash"><div class="prod-dash-title"><i class="ti ti-chart-bar"></i> Productividad del equipo</div>${rows}</div>`;
+  // Mantener estado abierto/cerrado entre renders
+  const isOpen=dash.dataset.open==='true';
+  dash.innerHTML=`
+    <div class="prod-dash">
+      <div class="prod-dash-title" onclick="toggleMiniDash()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span><i class="ti ti-chart-bar"></i> Productividad del equipo — ${pctGlobal}% completado</span>
+        <i class="ti ti-chevron-${isOpen?'up':'down'}" id="mini-dash-chev" style="font-size:16px;color:var(--text2)"></i>
+      </div>
+      <div id="mini-dash-rows" style="display:${isOpen?'block':'none'}">${rows}</div>
+    </div>`;
+}
+
+function toggleMiniDash(){
+  const dash=document.getElementById('exec-prod-dash');
+  const rows=document.getElementById('mini-dash-rows');
+  const chev=document.getElementById('mini-dash-chev');
+  if(!rows)return;
+  const isOpen=rows.style.display==='block';
+  rows.style.display=isOpen?'none':'block';
+  dash.dataset.open=isOpen?'false':'true';
+  if(chev)chev.className=`ti ti-chevron-${isOpen?'down':'up'}`;
 }
 
 function renderProductividad(){
