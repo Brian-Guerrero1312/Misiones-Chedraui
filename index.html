@@ -408,21 +408,28 @@ async function syncConteos(tienda, silent=true) {
     if (!d.ok) return;
 
     // Borrar todos los conteos locales de esta tienda
-    Object.keys(counts).forEach(k => { if (k.startsWith(tienda + '_')) delete counts[k]; });
+    // Las claves pueden ser tienda_ean donde tienda es el ID de la fila en Sheets
+    // Usamos el prefijo del storeId tal como se guarda
+    const prefix = tienda + '_';
+    Object.keys(counts).forEach(k => {
+      if (k.startsWith(prefix)) delete counts[k];
+    });
 
     // Reemplazar con lo que viene de Sheets
     d.data.forEach(c => {
-      const key = c.tienda + '_' + c.ean;
+      const key = tienda + '_' + c.ean;
+      const hasPick = c.qty_picking > 0;
+      const hasBod  = c.qty_bodega  > 0;
       counts[key] = {
         qty_picking:  c.qty_picking,
         qty_bodega:   c.qty_bodega,
-        pick_active:  c.qty_picking > 0,
-        bod_active:   c.qty_bodega  > 0,
+        pick_active:  hasPick,
+        bod_active:   hasBod,
         usuario:      c.usuario,
         ts:           c.ts,
         ean:          c.ean,
         nombre:       c.nombre,
-        tienda:       c.tienda,
+        tienda:       tienda,
         categoria:    c.categoria
       };
     });
@@ -430,7 +437,7 @@ async function syncConteos(tienda, silent=true) {
     lsSet(K_COUNTS, counts);
     render();
     if (!silent) toast('Conteos actualizados ✓');
-  } catch { /* silencioso */ }
+  } catch(e) { console.error('syncConteos error:', e); }
 }
 
 function startAutoSync() {
@@ -478,16 +485,16 @@ function populateStores(){
   if(prev&&storeData[prev])sel.value=prev;
 }
 
-document.getElementById('sel-store').addEventListener('change', () => {
+document.getElementById('sel-store').addEventListener('change', async () => {
   const storeId = document.getElementById('sel-store').value;
-  if (storeId) syncConteos(storeId, false);
-  render();
+  render(); // render inmediato con datos locales
+  if (storeId) await syncConteos(storeId, false); // luego sync y re-render
 });
 document.getElementById('inp-search').addEventListener('input', render);
-document.getElementById('adm-sel-store').addEventListener('change', () => {
+document.getElementById('adm-sel-store').addEventListener('change', async () => {
   const storeId = document.getElementById('adm-sel-store').value;
-  if (storeId) syncConteos(storeId, false);
   render();
+  if (storeId) await syncConteos(storeId, false);
 });
 document.getElementById('adm-search').addEventListener('input', render);
 
@@ -509,10 +516,14 @@ function render(){
     fil.forEach(p=>{
       const key=storeId+'_'+p.ean,c=counts[key];
       total++;let tag='<span class="tag-pend">Pendiente</span>';
-      if(c){counted++;const hp=c.pick_active,hb=c.bod_active;
+      if(c){
+        counted++;
+        const hp = c.pick_active || c.qty_picking > 0;
+        const hb = c.bod_active  || c.qty_bodega  > 0;
         if(hp&&hb){bothCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> P:${c.qty_picking} B:${c.qty_bodega}</span>`;}
         else if(hp){pkCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Pick:${c.qty_picking}</span>`;}
         else if(hb){bdCnt++;tag=`<span class="tag-ok"><i class="ti ti-check"></i> Bod:${c.qty_bodega}</span>`;}
+        else{counted--;tag='<span class="tag-pend">Pendiente</span>';}
       }
       const tid='th_'+p.ean.replace(/\W/g,'_');
       const thumb=p.img?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-photo"></i></div>`;
