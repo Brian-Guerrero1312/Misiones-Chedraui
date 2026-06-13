@@ -380,7 +380,9 @@ function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{retu
 function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
 function toast(msg,dur=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
-function getUrl(){return(ls(K_CONFIG)||{}).url||DEFAULT_URL}
+// La URL del código siempre tiene prioridad — así cualquier actualización
+// del index.html en GitHub se aplica automáticamente a todos los usuarios
+function getUrl(){ return DEFAULT_URL; }
 
 // ===== SYNC INDICATOR =====
 function setSyncStatus(state, msg){
@@ -447,7 +449,7 @@ function logout(){
 }
 
 // ===== CONFIG =====
-function saveConfig(){lsSet(K_CONFIG,{url:document.getElementById('cfg-url').value.trim()});toast('Guardado ✓')}
+function saveConfig(){lsSet(K_CONFIG,{url:document.getElementById('cfg-url').value.trim()});toast('URL guardada — actualiza index.html en GitHub para todos los usuarios')}
 async function testConnection(){
   const url=document.getElementById('cfg-url').value.trim()||DEFAULT_URL;
   const dot=document.getElementById('cfg-dot'),st=document.getElementById('cfg-status');
