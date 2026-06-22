@@ -634,8 +634,10 @@ function render(){
   const store=storeData[storeId];
   const isClosed=closedStores[storeId];
   let html='',total=0,counted=0,pkCnt=0,bdCnt=0,bothCnt=0;
-  Object.entries(store.categories).forEach(([cat,prods])=>{
+  const sortedCats=Object.entries(store.categories).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+  sortedCats.forEach(([cat,prods])=>{
     let fil=prods.filter(p=>!q||p.name.toLowerCase().includes(q)||p.ean.includes(q));
+    fil=fil.slice().sort((a,b)=>a.name.localeCompare(b.name,'es'));
     if(activeFilter==='pending') fil=fil.filter(p=>!counts[storeId+'_'+p.ean]);
     if(activeFilter==='counted') fil=fil.filter(p=>counts[storeId+'_'+p.ean]);
     if(activeFilter==='mine') fil=fil.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario===session.name;});
