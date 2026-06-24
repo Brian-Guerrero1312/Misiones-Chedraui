@@ -373,7 +373,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxupKs8WYTc4tXajgbaBUJUTzu1bYscPBdGDbrnmnovvx-W2TNc8fQu_oxKH05rkzoUaw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzsb0SeaQiubmpC4_ntP88E7GqjXTyIk5JPtUtzxG6qGLLzgf897hBH9y-SeoKmKKrjJA/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
@@ -542,10 +542,10 @@ async function loadProducts(){
     if(d.ok){
       storeData={};
       d.data.forEach(row=>{
-        const{tienda,categoria,ean,nombre,imagen}=row;
+        const{tienda,categoria,ean,nombre,imagen,wh_id}=row;
         if(!storeData[tienda])storeData[tienda]={name:tienda,categories:{}};
         if(!storeData[tienda].categories[categoria])storeData[tienda].categories[categoria]=[];
-        storeData[tienda].categories[categoria].push({ean,name:nombre,img:imagen||''});
+        storeData[tienda].categories[categoria].push({ean,name:nombre,img:imagen||'',wh_id:wh_id||''});
       });
       populateStores();render();toast('Productos cargados ✓');
     }
@@ -878,7 +878,7 @@ async function saveCnt(){
   const nB=bodActive?Number(document.getElementById('f-bod').value||0):0;
   const key=curProd.sid+'_'+curProd.ean;
   const prev=counts[key];
-  const record={qty_picking:nP,qty_bodega:nB,pick_active:pickActive,bod_active:bodActive,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat,prev_usuario:prev?.usuario||'',prev_qty_picking:prev?.qty_picking??'',prev_qty_bodega:prev?.qty_bodega??''};
+  const record={qty_picking:nP,qty_bodega:nB,pick_active:pickActive,bod_active:bodActive,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat,wh_id:curProd.p.wh_id||'',prev_usuario:prev?.usuario||'',prev_qty_picking:prev?.qty_picking??'',prev_qty_bodega:prev?.qty_bodega??''};
   counts[key]=record;lsSet(K_COUNTS,counts);
   closeMod();render();toast('Guardando...');
   try{
