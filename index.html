@@ -583,6 +583,7 @@ function populateStores(){
 }
 
 // ===== STORE CHANGE EVENTS =====
+document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('sel-store').addEventListener('change',async()=>{
   const s=document.getElementById('sel-store').value;
   activeFilter='all';
@@ -602,6 +603,7 @@ document.getElementById('adm-sel-store').addEventListener('change',async()=>{
 });
 document.getElementById('adm-search').addEventListener('input',render);
 document.getElementById('prod-sel-store').addEventListener('change',renderProductividad);
+}); // end DOMContentLoaded
 
 async function checkClosedStatus(storeId){
   try{
@@ -1021,8 +1023,14 @@ function fixedImg(url,targetId,isBanner){
 }
 
 // ===== INIT =====
-const savedSession=ls(K_SESSION);
-if(savedSession){session=savedSession;onLogin();}
+try {
+  const savedSession=ls(K_SESSION);
+  if(savedSession){session=savedSession;onLogin();}
+} catch(e) {
+  console.error('Session restore failed:', e);
+  localStorage.removeItem(K_SESSION);
+  showScreen('scr-login');
+}
 </script>
 </body>
 </html>
