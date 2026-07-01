@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Misiones Chedraui</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23E50000'/><path d='M4 17 C4 13 8 12 11 14 C12 15 13 15 14 14 C15 13 16 12 16 12 C16 12 17 13 18 14 C19 15 20 15 21 14 C24 12 28 13 28 17 C28 20 25 20 23 18 C21 16 20 17 18 18 C17 19 16 19 16 19 C16 19 15 19 14 18 C12 17 11 16 9 18 C7 20 4 20 4 17 Z' fill='white'/></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/blueimp-load-image@5.16.0/js/load-image.all.min.js"></script>
 <style>
@@ -36,8 +37,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .main-page{min-height:100vh;background:var(--bg3)}
 .top-bar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1rem;height:52px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:50}
 .top-logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;flex:1;min-width:0}
-.top-logo i{color:var(--green);font-size:20px;flex-shrink:0}
 .top-logo span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-logo{width:28px;height:28px;border-radius:6px;background:#FF441B;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-0.5px}
 .role-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;flex-shrink:0}
 .role-badge.admin{background:var(--blue-bg);color:var(--blue)}
 .role-badge.exec{background:var(--green-bg);color:var(--green-dk)}
@@ -218,7 +219,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- LOGIN -->
 <div id="scr-login" class="screen active">
   <div class="auth-page"><div class="auth-card">
-    <div class="auth-logo"><i class="ti ti-building-store"></i></div>
+    <div class="auth-logo" style="background:#FF441B"><span style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px">MC</span></div>
     <h1>Misiones Chedraui</h1><p class="sub">Inicia sesión con tu cuenta</p>
     <div class="field"><label>Nombre</label><input type="text" id="l-name" placeholder="Tu nombre..." autocomplete="off"></div>
     <div class="field"><label>PIN (4 dígitos)</label><input type="password" id="l-pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
@@ -258,7 +259,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="scr-main" class="screen">
   <div class="main-page">
     <div class="top-bar">
-      <div class="top-logo"><i class="ti ti-building-store"></i><span>Misiones Chedraui</span></div>
+      <div class="top-logo"><div class="mc-logo">MC</div><span>Misiones Chedraui</span></div>
       <span class="role-badge exec">Ejecución</span>
       <div id="sync-ind-exec" class="sync-indicator" title="Estado de sincronización"><span class="sync-dot" id="sync-dot-exec"></span><span id="sync-txt-exec">—</span></div>
       <div class="avatar" id="av-exec" onclick="logout()" title="Cerrar sesión">?</div>
@@ -287,7 +288,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="scr-admin" class="screen">
   <div class="main-page">
     <div class="top-bar">
-      <div class="top-logo"><i class="ti ti-building-store"></i><span>Misiones Chedraui</span></div>
+      <div class="top-logo"><div class="mc-logo">MC</div><span>Misiones Chedraui</span></div>
       <span class="role-badge admin">Admin</span>
       <div id="sync-ind-admin" class="sync-indicator" title="Estado de sincronización"><span class="sync-dot" id="sync-dot-admin"></span><span id="sync-txt-admin">—</span></div>
       <button class="btn-ghost" onclick="showScreen('scr-config')"><i class="ti ti-settings"></i></button>
@@ -455,11 +456,12 @@ function onLogin(){
   if(session.rol==='admin'){showScreen('scr-admin');loadProducts();loadUsers();}
   else{showScreen('scr-main');loadProducts();}
   startAutoSync();
+  startInactivityMonitor();
 }
 
 function logout(){
   if(!confirm('¿Cerrar sesión?'))return;
-  stopAutoSync();session=null;localStorage.removeItem(K_SESSION);
+  stopAutoSync();stopInactivityMonitor();session=null;localStorage.removeItem(K_SESSION);
   document.getElementById('l-name').value='';document.getElementById('l-pin').value='';
   showScreen('scr-login');
 }
@@ -820,44 +822,97 @@ function renderProductividad(){
   const store=storeData[storeId];
   const allProds=Object.values(store.categories).flat();
   const total=allProds.length;
+  const META=125;
+  const ahora=new Date();
+  const hoy=ahora.toDateString();
   const byUser={};
   allProds.forEach(p=>{
     const c=counts[storeId+'_'+p.ean];
-    if(!c)return;
+    if(!c||!c.usuario)return;
     const u=c.usuario;
-    if(!byUser[u])byUser[u]={cnt:0,lastTs:null};
+    if(!byUser[u])byUser[u]={cnt:0,cntHoy:0,tsList:[],firstTs:null,lastTs:null};
     byUser[u].cnt++;
-    if(!byUser[u].lastTs||c.ts>byUser[u].lastTs)byUser[u].lastTs=c.ts;
+    const ts=new Date(c.ts);
+    if(ts.toDateString()===hoy)byUser[u].cntHoy++;
+    byUser[u].tsList.push(ts);
+    if(!byUser[u].firstTs||ts<byUser[u].firstTs)byUser[u].firstTs=ts;
+    if(!byUser[u].lastTs||ts>byUser[u].lastTs)byUser[u].lastTs=ts;
   });
   if(!Object.keys(byUser).length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin conteos registrados aún</div>';return;}
-  const META=125;
-  let rows='';
-  Object.entries(byUser).sort((a,b)=>b[1].cnt-a[1].cnt).forEach(([u,d])=>{
-    const pct=total?Math.round(d.cnt/total*100):0;
-    const metaPct=Math.min(Math.round(d.cnt/META*100),100);
-    const metaColor=metaPct>=100?'var(--green)':metaPct>=70?'var(--amber)':'var(--red)';
-    rows+=`<div class="prod-dash-row">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="prod-dash-name">${u}</div>
-          <div class="prod-dash-bar-wrap" style="flex:1"><div class="prod-dash-bar" style="width:${pct}%"></div></div>
-          <div class="prod-dash-pct">${pct}%</div>
-          <div class="prod-dash-cnt">${d.cnt}/${total}</div>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">Meta 125: ${d.cnt}/${META} — <span style="color:${metaColor};font-weight:600">${metaPct}%</span></div>
-      </div>
-    </div>`;
+  // Calcular métricas
+  Object.values(byUser).forEach(d=>{
+    d.tsList.sort((a,b)=>a-b);
+    if(d.firstTs&&d.lastTs&&d.cntHoy>1){const mins=(d.lastTs-d.firstTs)/60000;d.velHora=mins>0?Math.round(d.cntHoy/(mins/60)):d.cntHoy;}else{d.velHora=d.cntHoy;}
+    if(d.tsList.length>1){let g=0;for(let i=1;i<d.tsList.length;i++)g+=d.tsList[i]-d.tsList[i-1];d.avgGapSeg=Math.round((g/(d.tsList.length-1))/1000);}else{d.avgGapSeg=0;}
+    d.gapActualMin=d.lastTs?Math.round((ahora-d.lastTs)/60000):null;
+    d.heatmap=Array(24).fill(0);
+    d.tsList.forEach(ts=>{if(ts.toDateString()===hoy)d.heatmap[ts.getHours()]++;});
+    const hace10=new Date(ahora-10*60000);
+    d.racha=d.tsList.filter(ts=>ts>=hace10).length;
+    d.metaPct=Math.min(Math.round(d.cntHoy/META*100),100);
   });
   const totalCounted=Object.values(byUser).reduce((s,d)=>s+d.cnt,0);
+  let cards='';
+  Object.entries(byUser).sort((a,b)=>b[1].cntHoy-a[1].cntHoy).forEach(([u,d])=>{
+    const pct=total?Math.round(d.cnt/total*100):0;
+    const metaColor=d.metaPct>=100?'var(--green)':d.metaPct>=70?'var(--amber)':'var(--red)';
+    const gapColor=d.gapActualMin===null?'var(--text3)':d.gapActualMin>15?'var(--red)':d.gapActualMin>5?'var(--amber)':'var(--green)';
+    const gapTxt=d.gapActualMin===null?'—':d.gapActualMin===0?'Ahora mismo':d.gapActualMin===1?'Hace 1 min':`Hace ${d.gapActualMin} min`;
+    const gapAlert=d.gapActualMin>15?' ⚠️':'';
+    const avgTxt=d.avgGapSeg>0?(d.avgGapSeg<60?`${d.avgGapSeg}s`:`${Math.round(d.avgGapSeg/60)}m`):'—';
+    const inicio=d.firstTs&&d.firstTs.toDateString()===hoy?d.firstTs.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'—';
+    const ultimo=d.lastTs?d.lastTs.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'—';
+    const maxH=Math.max(...d.heatmap,1);
+    const heatCells=d.heatmap.map((v,h)=>`<div title="${h}:00 — ${v}" style="flex:1;height:18px;background:${v>0?`rgba(29,158,117,${Math.max(0.15,v/maxH)})`:'var(--bg2)'};border-radius:2px"></div>`).join('');
+    cards+=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:600">${u}</div>
+        <div style="font-size:11px;color:${gapColor};font-weight:600">${gapTxt}${gapAlert}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="stat"><div class="stat-n" style="color:var(--green)">${d.cntHoy}</div><div class="stat-l">Hoy</div></div>
+        <div class="stat"><div class="stat-n" style="color:${metaColor}">${d.metaPct}%</div><div class="stat-l">Meta</div></div>
+        <div class="stat"><div class="stat-n">${d.velHora}</div><div class="stat-l">x hora</div></div>
+        <div class="stat"><div class="stat-n">${avgTxt}</div><div class="stat-l">Prom.</div></div>
+        <div class="stat"><div class="stat-n" style="color:var(--amber)">${d.racha}</div><div class="stat-l">Racha</div></div>
+        <div class="stat"><div class="stat-n">${inicio}</div><div class="stat-l">Inicio</div></div>
+        <div class="stat"><div class="stat-n">${ultimo}</div><div class="stat-l">Último</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Actividad por hora (hoy)</div>
+      <div style="display:flex;gap:2px;margin-bottom:2px">${heatCells}</div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:8px"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div>
+      <div class="goal-bar-wrap"><div class="goal-bar ${d.metaPct>=100?'high':d.metaPct>=70?'mid':'low'}" style="width:${d.metaPct}%"></div></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${d.cntHoy}/${META} meta hoy · ${d.cnt} acumulado · ${pct}% del inventario</div>
+    </div>`;
+  });
   area.innerHTML=`
-    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
-      <div class="stat"><div class="stat-n">${Object.keys(byUser).length}</div><div class="stat-l">Operadores</div></div>
+    <div style="display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap">
+      <div class="stat"><div class="stat-n">${Object.keys(byUser).length}</div><div class="stat-l">Auditores</div></div>
       <div class="stat"><div class="stat-n">${totalCounted}</div><div class="stat-l">Contados</div></div>
       <div class="stat"><div class="stat-n">${total-totalCounted}</div><div class="stat-l">Pendientes</div></div>
-      <div class="stat"><div class="stat-n">${total?Math.round(totalCounted/total*100):0}%</div><div class="stat-l">Avance total</div></div>
-    </div>
-    <div class="prod-dash"><div class="prod-dash-title"><i class="ti ti-chart-bar"></i> Conteos por operador</div>${rows}</div>`;
+      <div class="stat"><div class="stat-n">${total?Math.round(totalCounted/total*100):0}%</div><div class="stat-l">Avance</div></div>
+    </div>${cards}`;
 }
+
+// ===== INACTIVITY ALERT =====
+let inactivityInterval=null;
+function startInactivityMonitor(){
+  if(inactivityInterval)clearInterval(inactivityInterval);
+  inactivityInterval=setInterval(()=>{
+    if(session?.rol==='admin')return;
+    const storeId=document.getElementById('sel-store').value;
+    if(!storeId||!storeData[storeId])return;
+    const allProds=Object.values(storeData[storeId].categories).flat();
+    const misConteos=allProds.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario===session.name;});
+    if(!misConteos.length)return;
+    const lastTs=misConteos.reduce((max,p)=>{const c=counts[storeId+'_'+p.ean];return c.ts>max?c.ts:max;},'');
+    if(!lastTs)return;
+    const mins=Math.round((new Date()-new Date(lastTs))/60000);
+    if(mins===10)toast('⏱ Llevas 10 minutos sin registrar un conteo',4000);
+    else if(mins===20)toast('⚠️ 20 minutos de inactividad — ¿todo bien?',4000);
+  },60000);
+}
+function stopInactivityMonitor(){if(inactivityInterval)clearInterval(inactivityInterval);inactivityInterval=null;}
 
 // ===== USERS =====
 async function loadUsers(){
