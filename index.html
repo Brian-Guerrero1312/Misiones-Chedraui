@@ -190,6 +190,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
 .dot-ok{background:var(--green)}.dot-err{background:#E24B4A}
 
+/* PERSONAL GOAL CARD */
+.goal-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:1rem;display:none}
+.goal-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.goal-card-name{font-size:13px;font-weight:600}
+.goal-card-date{font-size:11px;color:var(--text3)}
+.goal-bar-wrap{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.goal-bar{height:100%;border-radius:4px;transition:width .5s}
+.goal-bar.low{background:var(--red)}
+.goal-bar.mid{background:var(--amber)}
+.goal-bar.high{background:var(--green)}
+.goal-card-bottom{display:flex;align-items:center;justify-content:space-between}
+.goal-card-count{font-size:22px;font-weight:700}
+.goal-card-pct{font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px}
+.goal-card-msg{font-size:11px;color:var(--text2);margin-top:2px}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
@@ -260,6 +275,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fpill" onclick="setFilter('mine',this)">Mis conteos</div>
         <div class="fpill" onclick="setFilter('others',this)">De otros</div>
       </div>
+      <div id="goal-card" class="goal-card"></div>
       <div id="exec-prod-dash" style="display:none"></div>
       <div id="summary-bar" class="summary" style="display:none"></div>
       <div id="product-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div></div>
@@ -692,8 +708,47 @@ function render(){
     <div class="stat"><div class="stat-n" style="color:var(--amber)">${sinStock}</div><div class="stat-l">Sin stock</div></div>
     <div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">Avance</div></div>`;
   // Mini dashboard de productividad en vista ejecución
-  if(!isAdmin&&storeId) renderMiniDash(storeId);
+  if(!isAdmin&&storeId){renderGoalCard(storeId);renderMiniDash(storeId);}
 }
+
+function renderGoalCard(storeId){
+  const card=document.getElementById('goal-card');if(!card)return;
+  const store=storeData[storeId];if(!store)return;
+  const META=125;
+  const hoy=new Date().toDateString();
+  // Contar solo los conteos de hoy del usuario actual
+  const allProds=Object.values(store.categories).flat();
+  let mioHoy=0,mioTotal=0;
+  allProds.forEach(p=>{
+    const c=counts[storeId+'_'+p.ean];
+    if(!c||c.usuario!==session.name)return;
+    mioTotal++;
+    if(new Date(c.ts).toDateString()===hoy)mioHoy++;
+  });
+  if(mioTotal===0&&mioHoy===0){card.style.display='none';return;}
+  card.style.display='block';
+  const pct=Math.min(Math.round(mioHoy/META*100),100);
+  const barClass=pct>=100?'high':pct>=70?'mid':'low';
+  const pctColor=pct>=100?'var(--green)':pct>=70?'var(--amber)':'var(--red)';
+  const faltан=Math.max(META-mioHoy,0);
+  const msg=pct>=100
+    ?'🎉 ¡Meta del día completada!'
+    :faltан===1?'¡Solo falta 1 producto para tu meta!'
+    :`${faltан} productos para completar tu meta de hoy`;
+  const fecha=new Date().toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});
+  card.innerHTML=`
+    <div class="goal-card-top">
+      <div class="goal-card-name"><i class="ti ti-target" style="color:var(--green)"></i> Mi progreso hoy</div>
+      <div class="goal-card-date">${fecha}</div>
+    </div>
+    <div class="goal-bar-wrap"><div class="goal-bar ${barClass}" style="width:${pct}%"></div></div>
+    <div class="goal-card-bottom">
+      <div>
+        <div class="goal-card-count" style="color:${pctColor}">${mioHoy}<span style="font-size:14px;font-weight:400;color:var(--text2)">/${META}</span></div>
+        <div class="goal-card-msg">${msg}</div>
+      </div>
+      <div class="goal-card-pct" style="background:${pct>=100?'var(--green-bg)':pct>=70?'var(--amber-bg)':'var(--red-bg)'};color:${pctColor}">${pct}%</div>
+    </div>`;
 
 function renderMiniDash(storeId){
   const dash=document.getElementById('exec-prod-dash');if(!dash)return;
