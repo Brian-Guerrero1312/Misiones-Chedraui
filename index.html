@@ -644,7 +644,9 @@ function render(){
     if(activeFilter==='others') fil=fil.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario!==session.name;});
     if(!fil.length)return;
     const cc=fil.filter(p=>counts[storeId+'_'+p.ean]).length;
-    html+=`<div class="cat-section"><div class="cat-hdr open" onclick="toggleCat(this)"><i class="ti ti-tag" style="font-size:14px;color:var(--text2)"></i><span>${cat}</span><span class="cat-badge">${cc}/${fil.length}</span><i class="ti ti-chevron-down cat-chev"></i></div><div class="prod-list">`;
+    const openClass=q?' open':'';
+    const openStyle=q?'flex':'none';
+    html+=`<div class="cat-section"><div class="cat-hdr${openClass}" onclick="toggleCat(this)"><i class="ti ti-tag" style="font-size:14px;color:var(--text2)"></i><span>${cat}</span><span class="cat-badge">${cc}/${fil.length}</span><i class="ti ti-chevron-down cat-chev"></i></div><div class="prod-list" style="display:${openStyle}">`;
     fil.forEach(p=>{
       const key=storeId+'_'+p.ean,c=counts[key];
       total++;
@@ -675,7 +677,20 @@ function render(){
   Object.values(store.categories).flat().forEach(p=>{if(!p.img)return;const id='th_'+p.ean.replace(/\W/g,'_');if(document.getElementById(id))fixedImg(p.img,id,false);});
   sumBar.style.display='flex';
   const pct=total?Math.round(counted/total*100):0;
-  sumBar.innerHTML=`<div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${counted}</div><div class="stat-l">Contados</div></div><div class="stat"><div class="stat-n">${total-counted}</div><div class="stat-l">Pendientes</div></div><div class="stat"><div class="stat-n">${pkCnt}</div><div class="stat-l">Solo Pick</div></div><div class="stat"><div class="stat-n">${bdCnt}</div><div class="stat-l">Solo Bod</div></div><div class="stat"><div class="stat-n">${bothCnt}</div><div class="stat-l">Ambos</div></div><div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">Avance</div></div>`;
+  // Contar productos sin stock (contados con 0 en ambas ubicaciones)
+  const sinStock=Object.values(store.categories).flat().filter(p=>{
+    const c=counts[storeId+'_'+p.ean];
+    return c&&c.usuario&&c.qty_picking===0&&c.qty_bodega===0;
+  }).length;
+  sumBar.innerHTML=`
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--green)">${counted}</div><div class="stat-l">Contados</div></div>
+    <div class="stat"><div class="stat-n">${total-counted}</div><div class="stat-l">Pendientes</div></div>
+    <div class="stat"><div class="stat-n">${pkCnt}</div><div class="stat-l">Solo Pick</div></div>
+    <div class="stat"><div class="stat-n">${bdCnt}</div><div class="stat-l">Solo Bod</div></div>
+    <div class="stat"><div class="stat-n">${bothCnt}</div><div class="stat-l">Ambos</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--amber)">${sinStock}</div><div class="stat-l">Sin stock</div></div>
+    <div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">Avance</div></div>`;
   // Mini dashboard de productividad en vista ejecución
   if(!isAdmin&&storeId) renderMiniDash(storeId);
 }
@@ -695,13 +710,27 @@ function renderMiniDash(storeId){
   });
   if(!Object.keys(byUser).length){dash.style.display='none';return;}
   dash.style.display='block';
+  const META = 125;
   const totalCounted=Object.values(byUser).reduce((s,d)=>s+d.cnt,0);
   const pctGlobal=total?Math.round(totalCounted/total*100):0;
   let rows='';
   Object.entries(byUser).sort((a,b)=>b[1].cnt-a[1].cnt).forEach(([u,d])=>{
     const pct=total?Math.round(d.cnt/total*100):0;
     const isMe=u===session.name;
-    rows+=`<div class="prod-dash-row${isMe?' my-highlight':''}"><div class="prod-dash-name">${isMe?'<strong>Yo</strong>':u}</div><div class="prod-dash-bar-wrap"><div class="prod-dash-bar" style="width:${pct}%"></div></div><div class="prod-dash-pct">${pct}%</div><div class="prod-dash-cnt">${d.cnt}/${total}</div></div>`;
+    const metaPct=Math.min(Math.round(d.cnt/META*100),100);
+    const metaColor=metaPct>=100?'var(--green)':metaPct>=70?'var(--amber)':'var(--red)';
+    const metaRow=isMe?`<div style="font-size:10px;color:var(--text3);margin-top:2px">Meta: ${d.cnt}/${META} — <span style="color:${metaColor};font-weight:600">${metaPct}%</span></div>`:'';
+    rows+=`<div class="prod-dash-row${isMe?' my-highlight':''}">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="prod-dash-name">${isMe?'<strong>Yo</strong>':u}</div>
+          <div class="prod-dash-bar-wrap" style="flex:1"><div class="prod-dash-bar" style="width:${pct}%"></div></div>
+          <div class="prod-dash-pct">${pct}%</div>
+          <div class="prod-dash-cnt">${d.cnt}/${total}</div>
+        </div>
+        ${metaRow}
+      </div>
+    </div>`;
   });
   // Mantener estado abierto/cerrado entre renders
   const isOpen=dash.dataset.open==='true';
@@ -743,11 +772,23 @@ function renderProductividad(){
     if(!byUser[u].lastTs||c.ts>byUser[u].lastTs)byUser[u].lastTs=c.ts;
   });
   if(!Object.keys(byUser).length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin conteos registrados aún</div>';return;}
+  const META=125;
   let rows='';
   Object.entries(byUser).sort((a,b)=>b[1].cnt-a[1].cnt).forEach(([u,d])=>{
     const pct=total?Math.round(d.cnt/total*100):0;
-    const last=d.lastTs?new Date(d.lastTs).toLocaleString('es-MX'):'—';
-    rows+=`<div class="prod-dash-row"><div class="prod-dash-name">${u}</div><div class="prod-dash-bar-wrap"><div class="prod-dash-bar" style="width:${pct}%"></div></div><div class="prod-dash-pct">${pct}%</div><div class="prod-dash-cnt">${d.cnt}/${total}</div></div>`;
+    const metaPct=Math.min(Math.round(d.cnt/META*100),100);
+    const metaColor=metaPct>=100?'var(--green)':metaPct>=70?'var(--amber)':'var(--red)';
+    rows+=`<div class="prod-dash-row">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="prod-dash-name">${u}</div>
+          <div class="prod-dash-bar-wrap" style="flex:1"><div class="prod-dash-bar" style="width:${pct}%"></div></div>
+          <div class="prod-dash-pct">${pct}%</div>
+          <div class="prod-dash-cnt">${d.cnt}/${total}</div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Meta 125: ${d.cnt}/${META} — <span style="color:${metaColor};font-weight:600">${metaPct}%</span></div>
+      </div>
+    </div>`;
   });
   const totalCounted=Object.values(byUser).reduce((s,d)=>s+d.cnt,0);
   area.innerHTML=`
