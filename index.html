@@ -749,6 +749,7 @@ function renderGoalCard(storeId){
       </div>
       <div class="goal-card-pct" style="background:${pct>=100?'var(--green-bg)':pct>=70?'var(--amber-bg)':'var(--red-bg)'};color:${pctColor}">${pct}%</div>
     </div>`;
+}
 
 function renderMiniDash(storeId){
   const dash=document.getElementById('exec-prod-dash');if(!dash)return;
