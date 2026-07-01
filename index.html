@@ -730,11 +730,11 @@ function renderGoalCard(storeId){
   const pct=Math.min(Math.round(mioHoy/META*100),100);
   const barClass=pct>=100?'high':pct>=70?'mid':'low';
   const pctColor=pct>=100?'var(--green)':pct>=70?'var(--amber)':'var(--red)';
-  const faltан=Math.max(META-mioHoy,0);
+  const faltan=Math.max(META-mioHoy,0);
   const msg=pct>=100
     ?'🎉 ¡Meta del día completada!'
-    :faltан===1?'¡Solo falta 1 producto para tu meta!'
-    :`${faltан} productos para completar tu meta de hoy`;
+    :faltan===1?'¡Solo falta 1 producto para tu meta!'
+    :`${faltan} productos para completar tu meta de hoy`;
   const fecha=new Date().toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});
   card.innerHTML=`
     <div class="goal-card-top">
