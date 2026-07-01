@@ -389,7 +389,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycby3PA-C5zoZRQTNWx3eMBW5xhT8uRpDNaWBcMDa9skA1OkRR-yNeOPd6mh4cl7s5wtgEw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwFzda1BvxAklG6uhHVhcaDo4Mfh3cPq7skz59NEJe2U5AuFWmRdjhXcJWdMHkX1g5pGA/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
@@ -990,8 +990,16 @@ async function saveCnt(){
 
 async function deleteCnt(){
   if(!confirm('¿Eliminar este conteo?'))return;
-  delete counts[curProd.sid+'_'+curProd.ean];
-  lsSet(K_COUNTS,counts);closeMod();render();toast('Conteo eliminado');
+  const key=curProd.sid+'_'+curProd.ean;
+  delete counts[key];
+  lsSet(K_COUNTS,counts);
+  closeMod();render();toast('Eliminando...');
+  try{
+    const params=new URLSearchParams({action:'deleteCount',tienda:curProd.sid,ean:curProd.ean});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(d.ok)toast('Conteo eliminado ✓');else toast('Error: '+d.error);
+  }catch{toast('Sin conexión — eliminado solo local');}
 }
 
 // ===== EXPORT CSV =====
