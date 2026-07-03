@@ -191,6 +191,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
 .dot-ok{background:var(--green)}.dot-err{background:#E24B4A}
 
+/* MOTIVATION ALERT */
+.motiv-card{border-radius:var(--r);padding:12px 14px;margin-bottom:1rem;display:none;animation:slideIn .4s ease}
+.motiv-card.warning{background:#FFF8E1;border:1px solid #F9A825}
+.motiv-card.danger{background:var(--red-bg);border:1px solid var(--red-b)}
+.motiv-card.success{background:var(--green-bg);border:1px solid var(--green)}
+.motiv-card.info{background:var(--blue-bg);border:1px solid var(--blue)}
+.motiv-row{display:flex;align-items:center;gap:10px}
+.motiv-icon{font-size:24px;flex-shrink:0}
+.motiv-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.motiv-msg{font-size:12px;opacity:.85;line-height:1.4}
+.motiv-card.warning .motiv-title{color:#7A5800}
+.motiv-card.warning .motiv-msg{color:#7A5800}
+.motiv-card.danger .motiv-title{color:var(--red)}
+.motiv-card.danger .motiv-msg{color:var(--red)}
+.motiv-card.success .motiv-title{color:var(--green-dk)}
+.motiv-card.success .motiv-msg{color:var(--green-dk)}
+.motiv-card.info .motiv-title{color:var(--blue)}
+.motiv-card.info .motiv-msg{color:var(--blue)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
 /* PERSONAL GOAL CARD */
 .goal-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:1rem;display:none}
 .goal-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -278,6 +298,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fpill" onclick="setFilter('others',this)">De otros</div>
       </div>
       <div id="goal-card" class="goal-card"></div>
+      <div id="motiv-card" class="motiv-card"></div>
       <div id="exec-prod-dash" style="display:none"></div>
       <div id="summary-bar" class="summary" style="display:none"></div>
       <div id="product-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div></div>
@@ -602,6 +623,14 @@ async function loadProducts(){
         storeData[tienda].categories[categoria].push({ean,name:nombre,img:imagen||'',wh_id:wh_id||''});
       });
       populateStores();render();toast('Productos cargados ✓');
+      // Si el auditor tiene tienda asignada, seleccionarla y sincronizar automáticamente
+      if(session?.rol!=='admin'&&session?.tienda){
+        const sel=document.getElementById('sel-store');
+        if(sel&&sel.value){
+          document.getElementById('exec-filters').style.display='flex';
+          await syncConteos(sel.value,false);
+        }
+      }
     }
   }catch{toast('Sin conexión');}
 }
@@ -613,9 +642,36 @@ function populateStores(){
     const prev=sel.value;
     sel.innerHTML='<option value="">— Seleccionar tienda —</option>';
     let stores=Object.keys(storeData);
-    if(!isAdmin&&session?.tienda&&session.tienda.trim()!=='')
-      stores=stores.filter(s=>s===session.tienda||storeData[s]?.name===session.tienda);
-    stores.forEach(id=>{const o=document.createElement('option');o.value=id;o.textContent=id+' — '+(storeData[id].name||id);sel.appendChild(o);});
+
+    // Si es ejecución con tienda asignada, filtrar estrictamente
+    if(!isAdmin&&session?.tienda&&session.tienda.trim()!==''){
+      const asignada=session.tienda.trim().toLowerCase();
+      stores=stores.filter(s=>
+        s.toLowerCase()===asignada ||
+        (storeData[s]?.name||'').toLowerCase()===asignada ||
+        s.toLowerCase().includes(asignada) ||
+        (storeData[s]?.name||'').toLowerCase().includes(asignada)
+      );
+      // Si solo hay una tienda disponible, seleccionarla automáticamente
+      if(stores.length===1&&selId==='sel-store'){
+        stores.forEach(id=>{
+          const o=document.createElement('option');
+          o.value=id;o.textContent=id+' — '+(storeData[id].name||id);
+          sel.appendChild(o);
+        });
+        sel.value=stores[0];
+        sel.disabled=true; // No puede cambiarla
+        return;
+      }
+    } else {
+      sel.disabled=false;
+    }
+
+    stores.forEach(id=>{
+      const o=document.createElement('option');
+      o.value=id;o.textContent=id+' — '+(storeData[id].name||id);
+      sel.appendChild(o);
+    });
     if(prev&&storeData[prev])sel.value=prev;
   });
 }
@@ -1096,25 +1152,118 @@ function renderPerfil(storeId){
     </div>`;
 }
 
-// ===== INACTIVITY ALERT =====
-let inactivityInterval=null;
-function startInactivityMonitor(){
-  if(inactivityInterval)clearInterval(inactivityInterval);
-  inactivityInterval=setInterval(()=>{
-    if(session?.rol==='admin')return;
-    const storeId=document.getElementById('sel-store').value;
-    if(!storeId||!storeData[storeId])return;
-    const allProds=Object.values(storeData[storeId].categories).flat();
-    const misConteos=allProds.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario===session.name;});
-    if(!misConteos.length)return;
-    const lastTs=misConteos.reduce((max,p)=>{const c=counts[storeId+'_'+p.ean];return c.ts>max?c.ts:max;},'');
-    if(!lastTs)return;
-    const mins=Math.round((new Date()-new Date(lastTs))/60000);
-    if(mins===10)toast('⏱ Llevas 10 minutos sin registrar un conteo',4000);
-    else if(mins===20)toast('⚠️ 20 minutos de inactividad — ¿todo bien?',4000);
-  },60000);
+// ===== MOTIVATIONAL ALERT SYSTEM =====
+const META_HORA=16; // 125 productos / 8 horas = ~16/hora
+let motivInterval=null;
+
+const MENSAJES={
+  inactivo10:[
+    {icon:'⏱️',title:'Llevas 10 minutos sin contar',msg:'No te retrases, cada producto cuenta para tu meta de hoy.'},
+    {icon:'👀',title:'¿Todo bien por allá?',msg:'Han pasado 10 minutos sin registrar nada. ¡Vamos!'},
+  ],
+  inactivo20:[
+    {icon:'⚠️',title:'20 minutos de inactividad',msg:'Estás acumulando retraso. Si retomas ahora, aún puedes alcanzar tu meta.'},
+    {icon:'🔔',title:'Atención — llevas 20 min parado',msg:'El equipo sigue contando. No te quedes atrás.'},
+  ],
+  inactivo30:[
+    {icon:'🚨',title:'30 minutos sin registrar',msg:'Esto puede afectar seriamente tu cumplimiento del día. ¡Retoma ya!'},
+  ],
+  lento:[
+    {icon:'🐢',title:'Ritmo por debajo del esperado',msg:'Tu velocidad actual no alcanza para llegar a 125. Necesitas acelerar un poco.'},
+    {icon:'📉',title:'Vas más lento de lo necesario',msg:'El promedio esperado es ~16 productos/hora. ¡Tú puedes lograrlo!'},
+  ],
+  bienencaminado:[
+    {icon:'💪',title:'¡Vas muy bien!',msg:'Tu ritmo es el correcto para llegar a tu meta. Sigue así.'},
+    {icon:'🔥',title:'En racha — sigue así',msg:'Llevas un excelente ritmo. No pares ahora.'},
+  ],
+  metaok:[
+    {icon:'🎯',title:'¡Meta del día completada!',msg:'Lograste tus 125 conteos de hoy. Excelente trabajo.'},
+    {icon:'🏆',title:'¡Objetivo cumplido!',msg:'Completaste tu meta diaria. Si quieres, puedes seguir ayudando al equipo.'},
+  ],
+};
+
+function getRandom(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function showMotivCard(tipo,extraMsg){
+  const card=document.getElementById('motiv-card');
+  if(!card)return;
+  const typeMap={
+    inactivo10:'warning',inactivo20:'danger',inactivo30:'danger',
+    lento:'warning',bienencaminado:'success',metaok:'success'
+  };
+  const m=getRandom(MENSAJES[tipo]);
+  const cssType=typeMap[tipo]||'info';
+  card.className=`motiv-card ${cssType}`;
+  card.style.display='block';
+  card.innerHTML=`<div class="motiv-row">
+    <div class="motiv-icon">${m.icon}</div>
+    <div><div class="motiv-title">${m.title}</div>
+    <div class="motiv-msg">${extraMsg||m.msg}</div></div>
+  </div>`;
 }
-function stopInactivityMonitor(){if(inactivityInterval)clearInterval(inactivityInterval);inactivityInterval=null;}
+
+function hideMotivCard(){
+  const card=document.getElementById('motiv-card');
+  if(card){card.style.display='none';}
+}
+
+function checkMotivation(){
+  if(session?.rol==='admin')return;
+  const storeId=document.getElementById('sel-store').value;
+  if(!storeId||!storeData[storeId]){hideMotivCard();return;}
+
+  const META=125;
+  const ahora=new Date();
+  const toMX=d=>new Date(d.toLocaleString('en-US',{timeZone:'America/Mexico_City'}));
+  const hoyMX=toMX(ahora).toDateString();
+  const allProds=Object.values(storeData[storeId].categories).flat();
+
+  // Recopilar mis conteos de hoy
+  const tsHoy=[];
+  allProds.forEach(p=>{
+    const c=counts[storeId+'_'+p.ean];
+    if(!c||c.usuario!==session.name)return;
+    const ts=new Date(c.ts);
+    if(toMX(ts).toDateString()===hoyMX)tsHoy.push(ts);
+  });
+
+  const cntHoy=tsHoy.length;
+
+  // ¿Ya cumplió la meta?
+  if(cntHoy>=META){showMotivCard('metaok');return;}
+
+  // ¿Cuánto tiempo lleva sin contar?
+  let minsInactivo=null;
+  if(tsHoy.length>0){
+    const ultimo=new Date(Math.max(...tsHoy.map(t=>t.getTime())));
+    minsInactivo=Math.round((ahora-ultimo)/60000);
+  }
+
+  if(minsInactivo!==null&&minsInactivo>=30){showMotivCard('inactivo30',`Llevas ${minsInactivo} minutos sin registrar un conteo.`);return;}
+  if(minsInactivo!==null&&minsInactivo>=20){showMotivCard('inactivo20',`Han pasado ${minsInactivo} minutos. Aún puedes recuperar el ritmo.`);return;}
+  if(minsInactivo!==null&&minsInactivo>=10){showMotivCard('inactivo10',`Llevas ${minsInactivo} minutos sin contar. No te retrases.`);return;}
+
+  // ¿Va al ritmo esperado?
+  if(tsHoy.length>1){
+    tsHoy.sort((a,b)=>a-b);
+    const mins=(new Date(Math.max(...tsHoy.map(t=>t.getTime())))-tsHoy[0])/60000;
+    const velActual=mins>0?cntHoy/(mins/60):0;
+    if(velActual>0&&velActual<META_HORA*0.7){
+      showMotivCard('lento',`Llevas ${velActual.toFixed(0)} productos/hora. El promedio esperado es ~${META_HORA}. ¡Tú puedes!`);
+      return;
+    }
+    if(velActual>=META_HORA*0.7){showMotivCard('bienencaminado',`Vas a ${velActual.toFixed(0)} productos/hora. ¡Sigue así!`);return;}
+  }
+
+  hideMotivCard();
+}
+
+function startInactivityMonitor(){
+  if(motivInterval)clearInterval(motivInterval);
+  checkMotivation(); // revisar al inicio
+  motivInterval=setInterval(checkMotivation, 60000); // cada minuto
+}
+function stopInactivityMonitor(){if(motivInterval)clearInterval(motivInterval);motivInterval=null;}
 
 // ===== USERS =====
 async function loadUsers(){
@@ -1236,7 +1385,7 @@ async function saveCnt(){
   const prev=counts[key];
   const record={qty_picking:nP,qty_bodega:nB,pick_active:pickActive,bod_active:bodActive,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat,wh_id:curProd.p.wh_id||'',prev_usuario:prev?.usuario||'',prev_qty_picking:prev?.qty_picking??'',prev_qty_bodega:prev?.qty_bodega??''};
   counts[key]=record;lsSet(K_COUNTS,counts);
-  closeMod();render();toast('Guardando...');
+  closeMod();render();checkMotivation();toast('Guardando...');
   try{
     const params=new URLSearchParams({action:'saveCount',...record});
     const r=await fetch(getUrl(),{method:'POST',body:params});
