@@ -442,6 +442,12 @@ const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwFzda1BvxAklG6uhHVhcaDo4Mfh3cPq7skz59NEJe2U5AuFWmRdjhXcJWdMHkX1g5pGA/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 
+// Cache de imágenes procesadas (evita reprocesar EXIF cada render)
+const imgCache={};
+
+// Debounce helper
+function debounce(fn,ms){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms);}}
+
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
 function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
@@ -603,7 +609,7 @@ function startAutoSync(){
     const isAdmin=session?.rol==='admin';
     const storeId=document.getElementById(isAdmin?'adm-sel-store':'sel-store').value;
     if(storeId)syncConteos(storeId,true);
-  },2*60*1000);
+  },5*60*1000); // cada 5 minutos
 }
 function stopAutoSync(){if(syncInterval)clearInterval(syncInterval);syncInterval=null;}
 
@@ -685,7 +691,7 @@ document.getElementById('sel-store').addEventListener('change',async()=>{
   document.getElementById('exec-filters').style.display=s?'flex':'none';
   render();if(s)await syncConteos(s,false);
 });
-document.getElementById('inp-search').addEventListener('input',render);
+document.getElementById('inp-search').addEventListener('input',debounce(render,300));
 document.getElementById('adm-sel-store').addEventListener('change',async()=>{
   const s=document.getElementById('adm-sel-store').value;
   activeFilter='all';
@@ -695,7 +701,7 @@ document.getElementById('adm-sel-store').addEventListener('change',async()=>{
   render();if(s)await syncConteos(s,false);
   if(s)checkClosedStatus(s);
 });
-document.getElementById('adm-search').addEventListener('input',render);
+document.getElementById('adm-search').addEventListener('input',debounce(render,300));
 document.getElementById('prod-sel-store').addEventListener('change', refreshProductividad);
 }); // end DOMContentLoaded
 
@@ -1152,118 +1158,11 @@ function renderPerfil(storeId){
     </div>`;
 }
 
-// ===== MOTIVATIONAL ALERT SYSTEM =====
-const META_HORA=16; // 125 productos / 8 horas = ~16/hora
-let motivInterval=null;
-
-const MENSAJES={
-  inactivo10:[
-    {icon:'⏱️',title:'Llevas 10 minutos sin contar',msg:'No te retrases, cada producto cuenta para tu meta de hoy.'},
-    {icon:'👀',title:'¿Todo bien por allá?',msg:'Han pasado 10 minutos sin registrar nada. ¡Vamos!'},
-  ],
-  inactivo20:[
-    {icon:'⚠️',title:'20 minutos de inactividad',msg:'Estás acumulando retraso. Si retomas ahora, aún puedes alcanzar tu meta.'},
-    {icon:'🔔',title:'Atención — llevas 20 min parado',msg:'El equipo sigue contando. No te quedes atrás.'},
-  ],
-  inactivo30:[
-    {icon:'🚨',title:'30 minutos sin registrar',msg:'Esto puede afectar seriamente tu cumplimiento del día. ¡Retoma ya!'},
-  ],
-  lento:[
-    {icon:'🐢',title:'Ritmo por debajo del esperado',msg:'Tu velocidad actual no alcanza para llegar a 125. Necesitas acelerar un poco.'},
-    {icon:'📉',title:'Vas más lento de lo necesario',msg:'El promedio esperado es ~16 productos/hora. ¡Tú puedes lograrlo!'},
-  ],
-  bienencaminado:[
-    {icon:'💪',title:'¡Vas muy bien!',msg:'Tu ritmo es el correcto para llegar a tu meta. Sigue así.'},
-    {icon:'🔥',title:'En racha — sigue así',msg:'Llevas un excelente ritmo. No pares ahora.'},
-  ],
-  metaok:[
-    {icon:'🎯',title:'¡Meta del día completada!',msg:'Lograste tus 125 conteos de hoy. Excelente trabajo.'},
-    {icon:'🏆',title:'¡Objetivo cumplido!',msg:'Completaste tu meta diaria. Si quieres, puedes seguir ayudando al equipo.'},
-  ],
-};
-
-function getRandom(arr){return arr[Math.floor(Math.random()*arr.length)];}
-
-function showMotivCard(tipo,extraMsg){
-  const card=document.getElementById('motiv-card');
-  if(!card)return;
-  const typeMap={
-    inactivo10:'warning',inactivo20:'danger',inactivo30:'danger',
-    lento:'warning',bienencaminado:'success',metaok:'success'
-  };
-  const m=getRandom(MENSAJES[tipo]);
-  const cssType=typeMap[tipo]||'info';
-  card.className=`motiv-card ${cssType}`;
-  card.style.display='block';
-  card.innerHTML=`<div class="motiv-row">
-    <div class="motiv-icon">${m.icon}</div>
-    <div><div class="motiv-title">${m.title}</div>
-    <div class="motiv-msg">${extraMsg||m.msg}</div></div>
-  </div>`;
-}
-
-function hideMotivCard(){
-  const card=document.getElementById('motiv-card');
-  if(card){card.style.display='none';}
-}
-
-function checkMotivation(){
-  if(session?.rol==='admin')return;
-  const storeId=document.getElementById('sel-store').value;
-  if(!storeId||!storeData[storeId]){hideMotivCard();return;}
-
-  const META=125;
-  const ahora=new Date();
-  const toMX=d=>new Date(d.toLocaleString('en-US',{timeZone:'America/Mexico_City'}));
-  const hoyMX=toMX(ahora).toDateString();
-  const allProds=Object.values(storeData[storeId].categories).flat();
-
-  // Recopilar mis conteos de hoy
-  const tsHoy=[];
-  allProds.forEach(p=>{
-    const c=counts[storeId+'_'+p.ean];
-    if(!c||c.usuario!==session.name)return;
-    const ts=new Date(c.ts);
-    if(toMX(ts).toDateString()===hoyMX)tsHoy.push(ts);
-  });
-
-  const cntHoy=tsHoy.length;
-
-  // ¿Ya cumplió la meta?
-  if(cntHoy>=META){showMotivCard('metaok');return;}
-
-  // ¿Cuánto tiempo lleva sin contar?
-  let minsInactivo=null;
-  if(tsHoy.length>0){
-    const ultimo=new Date(Math.max(...tsHoy.map(t=>t.getTime())));
-    minsInactivo=Math.round((ahora-ultimo)/60000);
-  }
-
-  if(minsInactivo!==null&&minsInactivo>=30){showMotivCard('inactivo30',`Llevas ${minsInactivo} minutos sin registrar un conteo.`);return;}
-  if(minsInactivo!==null&&minsInactivo>=20){showMotivCard('inactivo20',`Han pasado ${minsInactivo} minutos. Aún puedes recuperar el ritmo.`);return;}
-  if(minsInactivo!==null&&minsInactivo>=10){showMotivCard('inactivo10',`Llevas ${minsInactivo} minutos sin contar. No te retrases.`);return;}
-
-  // ¿Va al ritmo esperado?
-  if(tsHoy.length>1){
-    tsHoy.sort((a,b)=>a-b);
-    const mins=(new Date(Math.max(...tsHoy.map(t=>t.getTime())))-tsHoy[0])/60000;
-    const velActual=mins>0?cntHoy/(mins/60):0;
-    if(velActual>0&&velActual<META_HORA*0.7){
-      showMotivCard('lento',`Llevas ${velActual.toFixed(0)} productos/hora. El promedio esperado es ~${META_HORA}. ¡Tú puedes!`);
-      return;
-    }
-    if(velActual>=META_HORA*0.7){showMotivCard('bienencaminado',`Vas a ${velActual.toFixed(0)} productos/hora. ¡Sigue así!`);return;}
-  }
-
-  hideMotivCard();
-}
-
-function startInactivityMonitor(){
-  if(motivInterval)clearInterval(motivInterval);
-  checkMotivation(); // revisar al inicio
-  motivInterval=setInterval(checkMotivation, 60000); // cada minuto
-}
-function stopInactivityMonitor(){if(motivInterval)clearInterval(motivInterval);motivInterval=null;}
+// ===== INACTIVITY MONITOR (desactivado) =====
+function startInactivityMonitor(){}
+function stopInactivityMonitor(){}
+function checkMotivation(){}
+function hideMotivCard(){const c=document.getElementById('motiv-card');if(c)c.style.display='none';}
 
 // ===== USERS =====
 async function loadUsers(){
@@ -1432,8 +1331,24 @@ function toggleCat(el){el.classList.toggle('open');const l=el.nextSibling;l.styl
 
 function fixedImg(url,targetId,isBanner){
   if(!url)return;
-  try{loadImage(url,(canvas)=>{const el=document.getElementById(targetId);if(!el)return;if(canvas.type==='error'||!canvas.toDataURL){el.style.backgroundImage=`url('${url}')`;return;}el.style.backgroundImage=`url('${canvas.toDataURL('image/jpeg',0.9)}')`;},{maxWidth:isBanner?880:184,maxHeight:isBanner?400:184,orientation:true,canvas:true});}
-  catch{const el=document.getElementById(targetId);if(el)el.style.backgroundImage=`url('${url}')`;}
+  const el=document.getElementById(targetId);if(!el)return;
+  // Si ya está en cache, usarlo directamente sin reprocesar
+  if(imgCache[url]){el.style.backgroundImage=`url('${imgCache[url]}')`;return;}
+  try{
+    loadImage(url,(canvas)=>{
+      const el2=document.getElementById(targetId);if(!el2)return;
+      if(canvas.type==='error'||!canvas.toDataURL){
+        imgCache[url]=url; // cachear la URL original como fallback
+        el2.style.backgroundImage=`url('${url}')`;return;
+      }
+      const dataUrl=canvas.toDataURL('image/jpeg',0.85);
+      imgCache[url]=dataUrl; // guardar en cache
+      el2.style.backgroundImage=`url('${dataUrl}')`;
+    },{maxWidth:isBanner?880:184,maxHeight:isBanner?400:184,orientation:true,canvas:true});
+  }catch{
+    imgCache[url]=url;
+    if(el)el.style.backgroundImage=`url('${url}')`;
+  }
 }
 
 // ===== INIT =====
