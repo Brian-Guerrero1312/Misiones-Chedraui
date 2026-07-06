@@ -1186,22 +1186,24 @@ async function distributeWork(){
   if(!storeId){toast('Selecciona una tienda primero');return;}
   if(!storeData[storeId]){toast('Carga los productos primero');return;}
 
-  // Obtener auditores activos de esta tienda
   toast('Analizando historial...',5000);
   try{
     const rUsers=await fetch(getUrl()+'?action=getUsers');
     const dUsers=await rUsers.json();
-    if(!dUsers.ok){toast('Error al obtener usuarios');return;}
+    if(!dUsers.ok){toast('Error usuarios: '+dUsers.error);return;}
 
     const auditores=dUsers.data
       .filter(u=>u.estado==='activo'&&u.rol!=='admin'&&
-        (!u.tienda||u.tienda.trim()===''||u.tienda.trim().toLowerCase()===storeId.toLowerCase()||
+        (!u.tienda||u.tienda.trim()===''||
+         u.tienda.trim().toLowerCase()===storeId.toLowerCase()||
          u.tienda.trim().toLowerCase()===(storeData[storeId]?.name||'').toLowerCase()))
       .map(u=>u.nombre);
 
-    if(!auditores.length){toast('No hay auditores activos asignados a esta tienda');return;}
+    if(!auditores.length){
+      toast('No hay auditores activos para esta tienda. Verifica que tengan la tienda asignada en Usuarios.');
+      return;
+    }
 
-    // Preparar categorías con número de productos
     const cats=Object.entries(storeData[storeId].categories).map(([cat,prods])=>({
       cat, numProductos: prods.length
     }));
@@ -1212,40 +1214,44 @@ async function distributeWork(){
       auditores:JSON.stringify(auditores),
       categorias:JSON.stringify(cats)
     });
-    const r=await fetch(getUrl(),{method:'POST',body:params});
-    const d=await r.json();
-    if(!d.ok){toast('Error: '+d.error);return;}
 
-    // Mostrar resultado
+    const rDist=await fetch(getUrl(),{method:'POST',body:params});
+    const dDist=await rDist.json();
+    if(!dDist.ok){toast('Error distribución: '+dDist.error);return;}
+
     const banner=document.getElementById('adm-distribute-banner');
-    const asig=d.asignaciones;
-    const catTimes=d.categorias;
+    const asig=dDist.asignaciones;
+    const catTimes=dDist.categorias;
+
     let html=`<div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--r);padding:12px 14px">
       <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px"><i class="ti ti-arrows-split"></i> Distribución de trabajo — ${storeId}</div>
       <div style="display:flex;flex-direction:column;gap:8px">`;
-    Object.entries(asig).forEach(([usr,d])=>{
-      const catList=d.cats.map(c=>{
+
+    Object.entries(asig).forEach(([usr,asigData])=>{
+      const catList=asigData.cats.map(c=>{
         const ct=catTimes.find(x=>x.cat===c);
         return `${c} (${ct?ct.tiempoEstimadoMin:0} min)`;
       }).join(' · ');
-      const hrs=Math.floor(d.minutos/60);
-      const mins=d.minutos%60;
+      const hrs=Math.floor(asigData.minutos/60);
+      const mins=asigData.minutos%60;
       const duracion=hrs>0?`${hrs}h ${mins}m`:`${mins} min`;
       html+=`<div style="background:var(--bg);border-radius:var(--r);padding:8px 10px">
         <div style="font-size:13px;font-weight:600">${usr} — <span style="color:var(--blue)">${duracion} estimado</span></div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">${catList}</div>
       </div>`;
     });
+
     html+=`</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ Tiempos estimados basados en historial. Cada auditor verá solo sus categorías asignadas.</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ Tiempos estimados con base en historial. Los auditores verán solo sus categorías al recargar.</div>
     </div>`;
+
     banner.style.display='block';
     banner.innerHTML=html;
-
-    // Guardar asignaciones en memoria para filtrar la vista de cada auditor
-    // Se aplican cuando el auditor recarga la app
-    toast('Trabajo distribuido ✓ — Los auditores verán sus categorías al recargar');
-  }catch(e){toast('Error al distribuir: '+e.message);}
+    toast('Trabajo distribuido ✓');
+  }catch(e){
+    toast('Error: '+e.message);
+    console.error('distributeWork error:',e);
+  }
 }
 
 // ===== OBTENER CATEGORÍAS ASIGNADAS AL AUDITOR =====
