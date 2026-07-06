@@ -298,6 +298,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fpill" onclick="setFilter('others',this)">De otros</div>
       </div>
       <div id="goal-card" class="goal-card"></div>
+      <div id="inactivity-box" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:1rem;border:1px solid var(--border2);background:var(--bg)">
+        <i class="ti ti-clock" style="font-size:20px;flex-shrink:0" id="inactivity-icon"></i>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="inactivity-title"></div>
+          <div style="font-size:11px;color:var(--text2)" id="inactivity-sub"></div>
+        </div>
+      </div>
       <div id="motiv-card" class="motiv-card"></div>
       <div id="exec-prod-dash" style="display:none"></div>
       <div id="summary-bar" class="summary" style="display:none"></div>
@@ -362,9 +369,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="fpill" onclick="setFilter('counted',this)">Contados</div>
         </div>
         <div id="adm-closed-banner" style="display:none"></div>
+        <div id="adm-distribute-banner" style="display:none;margin-bottom:1rem"></div>
         <div id="adm-summary" class="summary" style="display:none"></div>
         <div id="adm-product-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div></div>
-        <div id="adm-actions" style="display:none;margin-top:1rem;display:none;gap:8px">
+        <div id="adm-actions" style="display:none;margin-top:1rem;gap:8px;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="distributeWork()" style="flex:1"><i class="ti ti-arrows-split"></i> Distribuir trabajo</button>
           <button class="btn-ghost" onclick="exportCSV()" style="flex:1"><i class="ti ti-download"></i> Exportar CSV</button>
           <button id="btn-close-inv" class="btn-ghost" onclick="toggleCloseInventory()" style="flex:1;color:var(--red);border-color:var(--red-b)"><i class="ti ti-lock"></i> Cerrar inventario</button>
         </div>
@@ -439,7 +448,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwFzda1BvxAklG6uhHVhcaDo4Mfh3cPq7skz59NEJe2U5AuFWmRdjhXcJWdMHkX1g5pGA/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzckaXw927NWI4y3WuZL81Ieh6Hzo411AaUCEB9fBcbCz0hCjjn55fMEZO02KC8WfKi6Q/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 
 // Cache de imágenes procesadas (evita reprocesar EXIF cada render)
@@ -634,6 +643,12 @@ async function loadProducts(){
         const sel=document.getElementById('sel-store');
         if(sel&&sel.value){
           document.getElementById('exec-filters').style.display='flex';
+          // Cargar categorías asignadas
+          const cats=await getMyCategories(sel.value);
+          if(cats){
+            if(!window._misCategorias) window._misCategorias={};
+            window._misCategorias[sel.value]=cats;
+          }
           await syncConteos(sel.value,false);
         }
       }
@@ -751,8 +766,15 @@ function render(){
   if(!storeId){area.innerHTML='<div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div>';sumBar.style.display='none';return;}
   const store=storeData[storeId];
   const isClosed=closedStores[storeId];
+  // Filtrar categorías asignadas si es auditor con asignación
+  let categoriasPermitidas=null;
+  if(!isAdmin&&window._misCategorias&&window._misCategorias[storeId]){
+    categoriasPermitidas=window._misCategorias[storeId];
+  }
   let html='',total=0,counted=0,pkCnt=0,bdCnt=0,bothCnt=0;
-  const sortedCats=Object.entries(store.categories).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+  const sortedCats=Object.entries(store.categories)
+    .filter(([cat])=>!categoriasPermitidas||categoriasPermitidas.includes(cat))
+    .sort((a,b)=>a[0].localeCompare(b[0],'es'));
   sortedCats.forEach(([cat,prods])=>{
     let fil=prods.filter(p=>!q||p.name.toLowerCase().includes(q)||p.ean.includes(q));
     fil=fil.slice().sort((a,b)=>a.name.localeCompare(b.name,'es'));
@@ -810,7 +832,7 @@ function render(){
     <div class="stat"><div class="stat-n" style="color:var(--amber)">${sinStock}</div><div class="stat-l">Sin stock</div></div>
     <div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">Avance</div></div>`;
   // Mini dashboard de productividad en vista ejecución
-  if(!isAdmin&&storeId){renderGoalCard(storeId);renderMiniDash(storeId);}
+  if(!isAdmin&&storeId){renderGoalCard(storeId);updateInactivityBox(storeId);renderMiniDash(storeId);}
 }
 
 function renderGoalCard(storeId){
@@ -1158,6 +1180,118 @@ function renderPerfil(storeId){
     </div>`;
 }
 
+// ===== DISTRIBUTE WORK =====
+async function distributeWork(){
+  const storeId=document.getElementById('adm-sel-store').value;
+  if(!storeId){toast('Selecciona una tienda primero');return;}
+  if(!storeData[storeId]){toast('Carga los productos primero');return;}
+
+  // Obtener auditores activos de esta tienda
+  toast('Analizando historial...',5000);
+  try{
+    const rUsers=await fetch(getUrl()+'?action=getUsers');
+    const dUsers=await rUsers.json();
+    if(!dUsers.ok){toast('Error al obtener usuarios');return;}
+
+    const auditores=dUsers.data
+      .filter(u=>u.estado==='activo'&&u.rol!=='admin'&&
+        (!u.tienda||u.tienda.trim()===''||u.tienda.trim().toLowerCase()===storeId.toLowerCase()||
+         u.tienda.trim().toLowerCase()===(storeData[storeId]?.name||'').toLowerCase()))
+      .map(u=>u.nombre);
+
+    if(!auditores.length){toast('No hay auditores activos asignados a esta tienda');return;}
+
+    // Preparar categorías con número de productos
+    const cats=Object.entries(storeData[storeId].categories).map(([cat,prods])=>({
+      cat, numProductos: prods.length
+    }));
+
+    const params=new URLSearchParams({
+      action:'distributeWork',
+      tienda:storeId,
+      auditores:JSON.stringify(auditores),
+      categorias:JSON.stringify(cats)
+    });
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(!d.ok){toast('Error: '+d.error);return;}
+
+    // Mostrar resultado
+    const banner=document.getElementById('adm-distribute-banner');
+    const asig=d.asignaciones;
+    const catTimes=d.categorias;
+    let html=`<div style="background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--r);padding:12px 14px">
+      <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px"><i class="ti ti-arrows-split"></i> Distribución de trabajo — ${storeId}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">`;
+    Object.entries(asig).forEach(([usr,d])=>{
+      const catList=d.cats.map(c=>{
+        const ct=catTimes.find(x=>x.cat===c);
+        return `${c} (${ct?ct.tiempoEstimadoMin:0} min)`;
+      }).join(' · ');
+      const hrs=Math.floor(d.minutos/60);
+      const mins=d.minutos%60;
+      const duracion=hrs>0?`${hrs}h ${mins}m`:`${mins} min`;
+      html+=`<div style="background:var(--bg);border-radius:var(--r);padding:8px 10px">
+        <div style="font-size:13px;font-weight:600">${usr} — <span style="color:var(--blue)">${duracion} estimado</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${catList}</div>
+      </div>`;
+    });
+    html+=`</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ Tiempos estimados basados en historial. Cada auditor verá solo sus categorías asignadas.</div>
+    </div>`;
+    banner.style.display='block';
+    banner.innerHTML=html;
+
+    // Guardar asignaciones en memoria para filtrar la vista de cada auditor
+    // Se aplican cuando el auditor recarga la app
+    toast('Trabajo distribuido ✓ — Los auditores verán sus categorías al recargar');
+  }catch(e){toast('Error al distribuir: '+e.message);}
+}
+
+// ===== OBTENER CATEGORÍAS ASIGNADAS AL AUDITOR =====
+async function getMyCategories(storeId){
+  if(!storeId||session?.rol==='admin') return null;
+  try{
+    const r=await fetch(`${getUrl()}?action=getAsignaciones&tienda=${encodeURIComponent(storeId)}`);
+    const d=await r.json();
+    if(!d.ok||!d.data[session.name]) return null;
+    return d.data[session.name].cats; // array de categorías asignadas
+  }catch{return null;}
+}
+function updateInactivityBox(storeId){
+  const box=document.getElementById('inactivity-box');
+  const icon=document.getElementById('inactivity-icon');
+  const title=document.getElementById('inactivity-title');
+  const sub=document.getElementById('inactivity-sub');
+  if(!box||!storeId||!storeData[storeId]||session?.rol==='admin'){if(box)box.style.display='none';return;}
+  const allProds=Object.values(storeData[storeId].categories).flat();
+  const misConteos=allProds.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario===session.name;});
+  if(!misConteos.length){box.style.display='none';return;}
+  const lastTs=misConteos.reduce((max,p)=>{const c=counts[storeId+'_'+p.ean];return c.ts>max?c.ts:max;},'');
+  if(!lastTs){box.style.display='none';return;}
+  const mins=Math.round((new Date()-new Date(lastTs))/60000);
+  box.style.display='flex';
+  if(mins>=20){
+    box.style.borderColor='var(--red-b)';box.style.background='var(--red-bg)';
+    icon.style.color='var(--red)';
+    title.style.color='var(--red)';
+    title.textContent=`Llevas ${mins} minutos sin contar`;
+    sub.textContent='Estás acumulando retraso en tu meta del día.';
+  } else if(mins>=10){
+    box.style.borderColor='var(--amber-b)';box.style.background='var(--amber-bg)';
+    icon.style.color='var(--amber)';
+    title.style.color='var(--amber)';
+    title.textContent=`Llevas ${mins} minutos sin contar`;
+    sub.textContent='No te retrases, cada producto cuenta.';
+  } else {
+    box.style.borderColor='var(--border2)';box.style.background='var(--bg)';
+    icon.style.color='var(--green)';
+    title.style.color='var(--text)';
+    title.textContent=`Último conteo hace ${mins===0?'menos de 1':mins} min`;
+    sub.textContent='Vas bien, sigue contando.';
+  }
+}
+
 // ===== INACTIVITY MONITOR (desactivado) =====
 function startInactivityMonitor(){}
 function stopInactivityMonitor(){}
@@ -1284,7 +1418,10 @@ async function saveCnt(){
   const prev=counts[key];
   const record={qty_picking:nP,qty_bodega:nB,pick_active:pickActive,bod_active:bodActive,usuario:session.name,ts:new Date().toISOString(),ean:curProd.ean,nombre:curProd.p.name,tienda:curProd.sid,categoria:curProd.cat,wh_id:curProd.p.wh_id||'',prev_usuario:prev?.usuario||'',prev_qty_picking:prev?.qty_picking??'',prev_qty_bodega:prev?.qty_bodega??''};
   counts[key]=record;lsSet(K_COUNTS,counts);
-  closeMod();render();checkMotivation();toast('Guardando...');
+  closeMod();render();checkMotivation();
+  const sid=curProd.sid;
+  setTimeout(()=>updateInactivityBox(sid),100);
+  toast('Guardando...');
   try{
     const params=new URLSearchParams({action:'saveCount',...record});
     const r=await fetch(getUrl(),{method:'POST',body:params});
