@@ -176,6 +176,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-sm.blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
 
 /* CONFIG */
+.adm-actions-bar{display:none;margin-top:1rem;gap:8px;flex-wrap:wrap}
 .cfg-content{max-width:600px;margin:0 auto;padding:1.25rem 1rem;display:flex;flex-direction:column;gap:1rem}
 .cfg-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
 .cfg-card h3{font-size:15px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:7px}
@@ -372,7 +373,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="adm-distribute-banner" style="display:none;margin-bottom:1rem"></div>
         <div id="adm-summary" class="summary" style="display:none"></div>
         <div id="adm-product-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda</div></div>
-        <div id="adm-actions" style="display:none;margin-top:1rem;gap:8px;flex-wrap:wrap">
+        <div id="adm-actions" class="adm-actions-bar">
           <button class="btn-ghost" onclick="distributeWork()" style="flex:1"><i class="ti ti-arrows-split"></i> Distribuir trabajo</button>
           <button class="btn-ghost" onclick="exportCSV()" style="flex:1"><i class="ti ti-download"></i> Exportar CSV</button>
           <button id="btn-close-inv" class="btn-ghost" onclick="toggleCloseInventory()" style="flex:1;color:var(--red);border-color:var(--red-b)"><i class="ti ti-lock"></i> Cerrar inventario</button>
