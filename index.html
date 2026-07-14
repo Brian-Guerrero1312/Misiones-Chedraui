@@ -451,7 +451,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzckaXw927NWI4y3WuZL81Ieh6Hzo411AaUCEB9fBcbCz0hCjjn55fMEZO02KC8WfKi6Q/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzwFkMsGNIVzyna9LTL1h37_Vo_zml422FA-sOKQr20AivceLptR_pm9xtkB3c057KUkA/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 
 // Cache de imágenes procesadas (evita reprocesar EXIF cada render)
@@ -645,12 +645,14 @@ async function loadProducts(){
     const r=await fetch(getUrl()+'?action=getProducts');const d=await r.json();
     if(d.ok){
       storeData={};
-      const eansSeen={}; // para deduplicar por tienda+EAN
+      const eansSeen={};
       d.data.forEach(row=>{
-        const{tienda,categoria,ean,nombre,imagen,wh_id}=row;
+        const{tienda,categoria,nombre,imagen,wh_id}=row;
+        // Forzar EAN a string completo — Sheets puede enviar notación científica
+        const ean=row.ean!==undefined&&row.ean!==null?String(row.ean).trim():'';
         if(!tienda||!ean)return;
         const dedupKey=tienda+'_'+ean;
-        if(eansSeen[dedupKey])return; // ignorar EAN duplicado
+        if(eansSeen[dedupKey])return;
         eansSeen[dedupKey]=true;
         if(!storeData[tienda])storeData[tienda]={name:tienda,categories:{}};
         if(!storeData[tienda].categories[categoria])storeData[tienda].categories[categoria]=[];
