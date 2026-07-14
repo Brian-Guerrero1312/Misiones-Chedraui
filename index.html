@@ -553,7 +553,9 @@ async function loadProducts(){
     if(d.ok){
       storeData={};
       d.data.forEach(row=>{
-        const{tienda,categoria,ean,nombre,imagen,wh_id}=row;
+        const tienda=row.tienda,categoria=row.categoria,nombre=row.nombre,imagen=row.imagen,wh_id=row.wh_id;
+        // EAN puede venir como número — convertir siempre a string
+        const ean=row.ean!==null&&row.ean!==undefined?String(row.ean):'';
         if(!tienda||!ean)return;
         if(!storeData[tienda])storeData[tienda]={name:tienda,categories:{}};
         if(!storeData[tienda].categories[categoria])storeData[tienda].categories[categoria]=[];
