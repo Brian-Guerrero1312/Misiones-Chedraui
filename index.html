@@ -642,7 +642,7 @@ async function loadProducts(){
   const areaId=isAdmin?'adm-product-area':'product-area';
   document.getElementById(areaId).innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
   try{
-    const r=await fetch(getUrl()+'?action=getProducts');const d=await r.json();
+    const r=await fetch(getUrl()+'?action=getProducts&t='+Date.now());const d=await r.json();
     if(d.ok){
       storeData={};
       d.data.forEach(row=>{
