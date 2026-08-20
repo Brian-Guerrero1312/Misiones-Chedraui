@@ -635,3 +635,7 @@ document.getElementById('calNext').addEventListener('click', async ()=>{
 </script>
 </body>
 </html>
+(async function init(){ await loadState(); render(); })();
+</script>
+</body>
+</html>
