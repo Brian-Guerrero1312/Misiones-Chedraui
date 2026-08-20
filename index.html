@@ -228,6 +228,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div></div>
 </div>
 
+<!-- CHECK-IN -->
+<div id="scr-checkin" class="screen">
+  <div class="auth-page"><div class="auth-card">
+    <div class="auth-logo" style="background:#FF441B"><span style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px">MC</span></div>
+    <h1>Check-in</h1>
+    <p class="sub" id="checkin-greeting">¡Buen día! ¿En qué tienda estás hoy?</p>
+    <div class="field">
+      <label>Tienda</label>
+      <select id="checkin-store"><option value="">— Seleccionar tienda —</option></select>
+    </div>
+    <div id="checkin-err" class="err-msg"></div>
+    <button class="btn-full" onclick="doCheckin()"><i class="ti ti-map-pin"></i> Registrar entrada</button>
+    <button class="btn-full secondary" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>
+  </div></div>
+</div>
+
 <!-- MAIN EJECUCIÓN -->
 <div id="scr-main" class="screen">
   <div class="main-page">
@@ -281,7 +297,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
       <div id="perfil-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
-      <div style="margin-top:1.5rem"><button class="btn-full secondary" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</button></div>
+      <div id="checkin-info" style="display:none;background:var(--green-bg);border:1px solid var(--green);border-radius:var(--r);padding:12px 14px;margin-top:1rem">
+        <div style="font-size:13px;font-weight:600;color:var(--green-dk);margin-bottom:4px"><i class="ti ti-map-pin"></i> Check-in activo</div>
+        <div style="font-size:12px;color:var(--green-dk)" id="checkin-info-txt"></div>
+        <button class="btn-full secondary" onclick="doCheckout()" style="margin-top:10px;color:var(--red);border-color:var(--red-b)"><i class="ti ti-logout"></i> Registrar salida</button>
+      </div>
+      <div style="margin-top:1rem"><button class="btn-full secondary" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</button></div>
     </div>
   </div>
 </div>
@@ -300,6 +321,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="admin-tabs">
         <div class="admin-tab active" onclick="switchTab('tab-conteos',this)">Conteos</div>
         <div class="admin-tab" onclick="switchTab('tab-productividad',this)">Productividad</div>
+        <div class="admin-tab" onclick="switchTab('tab-asistencia',this)">Asistencia</div>
         <div class="admin-tab" onclick="switchTab('tab-usuarios',this)">Usuarios</div>
       </div>
       <div id="tab-conteos" class="admin-section active">
@@ -332,6 +354,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <div id="productividad-area"><div class="empty-state"><i class="ti ti-chart-bar"></i>Selecciona una tienda</div></div>
       </div>
+      <div id="tab-asistencia" class="admin-section">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+          <button class="btn-ghost" onclick="loadAsistencia()"><i class="ti ti-refresh"></i> Actualizar</button>
+        </div>
+        <div id="asistencia-area"><div class="empty-state"><i class="ti ti-users"></i>Cargando...</div></div>
+      </div>
+
+      <!-- TAB USUARIOS -->
       <div id="tab-usuarios" class="admin-section">
         <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
           <button class="btn-ghost" onclick="loadUsers()"><i class="ti ti-refresh"></i> Actualizar</button>
@@ -391,7 +421,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbypu4ueHk9fN9nVhhI5BRMipDwBGpapwojNVIA1B6SLU_IsMwEvjQyY3hl0-kAvayL9Ag/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwd9VVoIPhiOt4zuUHHWS89dlaC9DnaS8Z1ptnh2qOYewoB5cIzNKoAGQoZASRh2K7wdQ/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 const imgCache={};
 function debounce(fn,ms){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms);}}
@@ -449,9 +479,105 @@ function onLogin(){
   ['av-exec','av-admin'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=initials;});
   document.getElementById('cfg-uname').textContent=session.name;
   document.getElementById('cfg-url').value=getUrl();
-  if(session.rol==='admin'){showScreen('scr-admin');loadProducts();loadUsers();}
-  else{showScreen('scr-main');loadProducts();}
-  startAutoSync();
+  if(session.rol==='admin'){showScreen('scr-admin');loadProducts();loadUsers();loadAsistencia();return;}
+  // Para auditores: verificar si ya hizo check-in hoy
+  checkCheckinStatus();
+}
+
+// Estado de check-in en memoria
+let checkinData=null;
+
+async function checkCheckinStatus(){
+  try{
+    const r=await fetch(`${getUrl()}?action=getCheckin&usuario=${encodeURIComponent(session.name)}`);
+    const d=await r.json();
+    if(d.ok&&d.encontrado&&!d.salida){
+      // Ya hizo check-in hoy y no ha salido → ir directo a contar
+      checkinData=d;
+      session.tienda=d.tienda;
+      lsSet(K_SESSION,session);
+      showScreen('scr-main');
+      loadProducts();
+      startAutoSync();
+    } else {
+      // No ha hecho check-in hoy → mostrar pantalla de check-in
+      await loadCheckinStores();
+      showScreen('scr-checkin');
+      document.getElementById('checkin-greeting').textContent=`¡Hola, ${session.name.split(' ')[0]}! ¿En qué tienda estás hoy?`;
+    }
+  }catch{
+    // Si hay error de red, mostrar check-in de todas formas
+    await loadCheckinStores();
+    showScreen('scr-checkin');
+  }
+}
+
+async function loadCheckinStores(){
+  // Cargar tiendas disponibles desde productos
+  try{
+    const r=await fetch(getUrl()+'?action=getProducts&t='+Date.now());
+    const d=await r.json();
+    if(d.ok){
+      storeData={};
+      d.data.forEach(row=>{
+        const tienda=row.tienda,categoria=row.categoria,nombre=row.nombre,imagen=row.imagen,wh_id=row.wh_id;
+        const ean=row.ean!==null&&row.ean!==undefined?String(row.ean):'';
+        if(!tienda||!ean)return;
+        const prioridad=String(row.prioridad||'').trim().toLowerCase()==='si';
+        if(!storeData[tienda])storeData[tienda]={name:tienda,categories:{}};
+        if(!storeData[tienda].categories[categoria])storeData[tienda].categories[categoria]=[];
+        storeData[tienda].categories[categoria].push({ean,name:nombre,img:imagen||'',wh_id:wh_id||'',prioridad});
+      });
+      const sel=document.getElementById('checkin-store');
+      sel.innerHTML='<option value="">— Seleccionar tienda —</option>';
+      Object.keys(storeData).forEach(id=>{
+        const o=document.createElement('option');o.value=id;o.textContent=id;sel.appendChild(o);
+      });
+    }
+  }catch{}
+}
+
+async function doCheckin(){
+  const tienda=document.getElementById('checkin-store').value;
+  const err=document.getElementById('checkin-err');
+  err.style.display='none';
+  if(!tienda){err.textContent='Selecciona una tienda';err.style.display='block';return;}
+  toast('Registrando entrada...');
+  try{
+    const r=await fetch(getUrl(),{method:'POST',body:new URLSearchParams({action:'checkin',usuario:session.name,tienda})});
+    const d=await r.json();
+    if(d.ok){
+      checkinData=d;
+      session.tienda=tienda;
+      lsSet(K_SESSION,session);
+      toast('¡Entrada registrada! ✓');
+      showScreen('scr-main');
+      populateStores();render();startAutoSync();
+      // Sincronizar la tienda seleccionada
+      const sel=document.getElementById('sel-store');
+      if(sel){
+        sel.value=tienda;
+        document.getElementById('exec-filters').style.display='flex';
+        await syncConteos(tienda,false);
+      }
+    }else{err.textContent=d.error||'Error al registrar';err.style.display='block';}
+  }catch{err.textContent='Sin conexión';err.style.display='block';}
+}
+
+async function doCheckout(){
+  if(!confirm('¿Registrar tu salida de hoy?'))return;
+  try{
+    const r=await fetch(getUrl(),{method:'POST',body:new URLSearchParams({action:'checkout',usuario:session.name})});
+    const d=await r.json();
+    if(d.ok){
+      const dur=d.duracion_min;
+      const hrs=Math.floor(dur/60),mins=dur%60;
+      toast(`Salida registrada ✓ — ${hrs>0?`${hrs}h `:''}${mins}min trabajados`);
+      checkinData=null;
+      // Actualizar info en perfil
+      document.getElementById('checkin-info').style.display='none';
+    }else toast('Error: '+d.error);
+  }catch{toast('Sin conexión');}
 }
 
 function logout(){
@@ -477,6 +603,50 @@ function switchTab(id,el){
   document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');el.classList.add('active');
   if(id==='tab-productividad')refreshProductividad();
+  if(id==='tab-asistencia')loadAsistencia();
+}
+
+async function loadAsistencia(){
+  const area=document.getElementById('asistencia-area');
+  area.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  try{
+    const r=await fetch(getUrl()+'?action=getAsistencia');
+    const d=await r.json();
+    if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin registros de hoy</div>';return;}
+    const ahora=new Date();
+    const toMX=d=>new Date(d.toLocaleString('en-US',{timeZone:'America/Mexico_City'}));
+    // Agrupar por tienda
+    const porTienda={};
+    d.data.forEach(r=>{if(!porTienda[r.tienda])porTienda[r.tienda]=[];porTienda[r.tienda].push(r);});
+    let html='';
+    Object.entries(porTienda).sort().forEach(([tienda,auditores])=>{
+      html+=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-building-store" style="color:var(--green)"></i> ${tienda} — ${auditores.filter(a=>!a.salida).length} activos</div>`;
+      auditores.forEach(a=>{
+        const entrada=a.entrada?toMX(new Date(a.entrada)):null;
+        const salida=a.salida?toMX(new Date(a.salida)):null;
+        const activo=!a.salida;
+        const minsActivo=entrada?Math.round((ahora-new Date(a.entrada))/60000):0;
+        const hrs=Math.floor(minsActivo/60),mins=minsActivo%60;
+        const tiempoTxt=salida?(a.duracion_min?`${Math.floor(a.duracion_min/60)}h ${a.duracion_min%60}m`:'—'):`${hrs>0?`${hrs}h `:''}${mins}min activo`;
+        const color=activo?'var(--green)':'var(--text3)';
+        const dot=activo?'<span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s infinite"></span>':'';
+        html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500">${dot}${a.usuario}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">
+              Entrada: ${entrada?entrada.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'—'}
+              ${salida?` · Salida: ${salida.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}` : ''}
+            </div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:${color}">${tiempoTxt}</div>
+          <div style="font-size:10px;padding:2px 8px;border-radius:20px;background:${activo?'var(--green-bg)':'var(--bg2)'};color:${activo?'var(--green-dk)':'var(--text3)'}">${activo?'Activo':'Salió'}</div>
+        </div>`;
+      });
+      html+='</div>';
+    });
+    area.innerHTML=html;
+  }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error al cargar</div>';}
 }
 
 async function refreshProductividad(){
@@ -831,6 +1001,18 @@ async function openPerfil(){
   document.getElementById('perfil-avatar').textContent=initials;
   document.getElementById('perfil-nombre').textContent=session.name;
   document.getElementById('perfil-tienda').textContent=session.tienda?`Tienda: ${session.tienda}`:'Sin tienda asignada';
+  // Mostrar info de check-in
+  const infoBox=document.getElementById('checkin-info');
+  const infoTxt=document.getElementById('checkin-info-txt');
+  if(checkinData&&!checkinData.salida){
+    const entrada=new Date(checkinData.entrada);
+    const mins=Math.round((new Date()-entrada)/60000);
+    const hrs=Math.floor(mins/60),m=mins%60;
+    infoTxt.textContent=`Tienda: ${checkinData.tienda} · Entrada: ${entrada.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} · ${hrs>0?`${hrs}h `:''}${m}min trabajados`;
+    infoBox.style.display='block';
+  } else {
+    infoBox.style.display='none';
+  }
   const storeId=document.getElementById('sel-store').value;
   if(storeId)await syncConteos(storeId,true);
   renderPerfil(storeId);
