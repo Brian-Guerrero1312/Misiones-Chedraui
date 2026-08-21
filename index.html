@@ -252,6 +252,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <span class="role-badge exec">Ejecución</span>
       <div id="sync-ind-exec" class="sync-indicator"><span class="sync-dot" id="sync-dot-exec"></span><span id="sync-txt-exec">—</span></div>
       <button class="btn-ghost" onclick="openPerfil()"><i class="ti ti-user-circle"></i></button>
+      <button class="btn-ghost" id="btn-checkout" onclick="doCheckout()" style="display:none;color:var(--red);border-color:var(--red-b)" title="Registrar salida"><i class="ti ti-door-exit"></i></button>
       <div class="avatar" id="av-exec" onclick="logout()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
@@ -497,6 +498,9 @@ async function checkCheckinStatus(){
       session.tienda=d.tienda;
       lsSet(K_SESSION,session);
       showScreen('scr-main');
+      // Mostrar botón checkout
+      const btnCO=document.getElementById('btn-checkout');
+      if(btnCO)btnCO.style.display='flex';
       loadProducts();
       startAutoSync();
     } else {
@@ -552,8 +556,10 @@ async function doCheckin(){
       lsSet(K_SESSION,session);
       toast('¡Entrada registrada! ✓');
       showScreen('scr-main');
+      // Mostrar botón checkout
+      const btnCO=document.getElementById('btn-checkout');
+      if(btnCO)btnCO.style.display='flex';
       populateStores();render();startAutoSync();
-      // Sincronizar la tienda seleccionada
       const sel=document.getElementById('sel-store');
       if(sel){
         sel.value=tienda;
@@ -574,8 +580,14 @@ async function doCheckout(){
       const hrs=Math.floor(dur/60),mins=dur%60;
       toast(`Salida registrada ✓ — ${hrs>0?`${hrs}h `:''}${mins}min trabajados`);
       checkinData=null;
+      // Ocultar botón checkout y alerta de inactividad
+      const btnCO=document.getElementById('btn-checkout');
+      if(btnCO)btnCO.style.display='none';
+      const box=document.getElementById('inactivity-box');
+      if(box)box.style.display='none';
       // Actualizar info en perfil
-      document.getElementById('checkin-info').style.display='none';
+      const infoBox=document.getElementById('checkin-info');
+      if(infoBox)infoBox.style.display='none';
     }else toast('Error: '+d.error);
   }catch{toast('Sin conexión');}
 }
@@ -1081,7 +1093,8 @@ async function distributeWork(){
 
 function updateInactivityBox(storeId){
   const box=document.getElementById('inactivity-box');
-  if(!box||!storeId||!storeData[storeId]||session?.rol==='admin'){if(box)box.style.display='none';return;}
+  // No mostrar si ya hizo checkout o es admin
+  if(!box||!storeId||!storeData[storeId]||session?.rol==='admin'||!checkinData||checkinData.salida){if(box)box.style.display='none';return;}
   const allProds=Object.values(storeData[storeId].categories).flat();
   const misConteos=allProds.filter(p=>{const c=counts[storeId+'_'+p.ean];return c&&c.usuario===session.name;});
   if(!misConteos.length){box.style.display='none';return;}
