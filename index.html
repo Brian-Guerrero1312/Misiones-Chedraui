@@ -547,12 +547,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="modal-scan-overlay" class="modal-overlay" onclick="closeScannerModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;width:96vw">
     <div class="scanner-video-wrap"><div id="scan-reader"></div></div>
-    <div id="sc-zoom-wrap" style="display:none;align-items:center;gap:8px;padding:10px 16px 0">
-      <i class="ti ti-zoom-in" style="color:var(--text2)"></i>
-      <input type="range" id="sc-zoom-slider" style="flex:1">
-      <i class="ti ti-zoom-in" style="color:var(--text2);font-size:18px"></i>
-    </div>
-    <div class="scanner-hint"><i class="ti ti-focus-2"></i> Si no lee, acerca o aleja un poco, o usa el zoom de arriba</div>
+    <div class="scanner-hint"><i class="ti ti-focus-2"></i> Apunta al código, cubriendo la mayor parte del recuadro. No es necesario acercarte demasiado.</div>
     <div class="modal-foot"><button class="mbtn mbtn-cancel" style="width:100%" onclick="closeScannerModal()">Cancelar</button></div>
   </div>
 </div>
@@ -618,7 +613,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzqqxBY5QsjSt6J7XOfyxkHG1SsssVFq0-qiBDJLEi3Mh73rdwAe-CITlKXHpRj3IzXQQ/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwpT_3fpQcPt09JuL1CAOlbAIdJOwhFvn7ALilOVJzfwYHoJn-dmCljVOTlcXPuTVRTDg/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1694,35 +1689,28 @@ async function openScanner(){
         Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,
         Html5QrcodeSupportedFormats.QR_CODE
       ],
+      // Usa el detector nativo del navegador (BarcodeDetector) cuando está disponible —
+      // es más rápido y lee a mayor distancia que el decodificador en JS puro.
+      useBarCodeDetectorIfSupported:true,
       verbose:false
     });
     await html5QrCodeInstance.start(
       {facingMode:'environment'},
       {
-        fps:12,
-        // Recuadro grande y apaisado (mejor para códigos de barras 1D) — casi todo el ancho de la cámara
-        qrbox:(viewfinderWidth,viewfinderHeight)=>({width:Math.floor(viewfinderWidth*0.9),height:Math.max(120,Math.floor(viewfinderHeight*0.45))}),
+        fps:15,
+        // Sin qrbox: se analiza el cuadro completo de la cámara en vez de una zona
+        // recortada, así no hay que encajar el código en un recuadro pequeño ni
+        // acercarse tanto — se puede leer desde más lejos y en cualquier posición.
         aspectRatio:1.333,
         disableFlip:false
       },
       onScanDecoded,
       ()=>{}
     );
-    // Mejor esfuerzo — mayor resolución/enfoque/zoom si el dispositivo lo soporta.
-    // Se piden DESPUÉS de que la cámara ya abrió, para que un rechazo de estas
-    // opciones nunca impida que el lector funcione.
+    // Mejor esfuerzo — mayor resolución/enfoque continuo si el dispositivo lo soporta.
+    // Se pide DESPUÉS de que la cámara ya abrió, para que un rechazo de esta
+    // opción nunca impida que el lector funcione.
     try{ await html5QrCodeInstance.applyVideoConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}); }catch(e){}
-    try{
-      const caps=html5QrCodeInstance.getRunningTrackCapabilities();
-      if(caps && caps.zoom && caps.zoom.max>caps.zoom.min){
-        const wrap=document.getElementById('sc-zoom-wrap'),slider=document.getElementById('sc-zoom-slider');
-        slider.min=caps.zoom.min;slider.max=caps.zoom.max;slider.step=caps.zoom.step||0.1;
-        const settings=html5QrCodeInstance.getRunningTrackSettings?html5QrCodeInstance.getRunningTrackSettings():{};
-        slider.value=settings.zoom||caps.zoom.min;
-        wrap.style.display='flex';
-        slider.oninput=()=>{ if(html5QrCodeInstance)html5QrCodeInstance.applyVideoConstraints({advanced:[{zoom:Number(slider.value)}]}).catch(()=>{}); };
-      }
-    }catch(e){}
   }catch(e){
     toast('No se pudo abrir la cámara: '+(e&&e.message?e.message:e));
     closeScannerModal();
@@ -1731,7 +1719,6 @@ async function openScanner(){
 async function closeScannerModal(e){
   if(e&&e.target!==document.getElementById('modal-scan-overlay'))return;
   document.getElementById('modal-scan-overlay').classList.remove('open');
-  document.getElementById('sc-zoom-wrap').style.display='none';
   if(html5QrCodeInstance){
     const inst=html5QrCodeInstance;html5QrCodeInstance=null;
     try{await inst.stop();}catch(e){}
