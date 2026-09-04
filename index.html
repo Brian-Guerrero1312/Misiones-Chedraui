@@ -504,7 +504,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="avatar" id="av-scanner" onclick="logoutScanner()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
-      <div class="ctrl-field" style="margin-bottom:1rem"><label>Tienda</label><select id="sc-sel-store" onchange="renderTRList()"><option value="">— Seleccionar tienda —</option></select></div>
+      <div class="ctrl-field" style="margin-bottom:1rem"><label>Tienda</label><select id="sc-sel-store" onchange="onScSelectStore()"><option value="">— Seleccionar tienda —</option></select></div>
       <div id="sc-tr-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda para ver sus TR pendientes</div></div>
     </div>
   </div>
@@ -560,13 +560,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- MODAL: REGISTRAR CANTIDAD CONTADA -->
 <div id="modal-count-overlay" class="modal-overlay" onclick="closeCountModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div id="sc-count-img"></div>
     <div class="modal-head" id="sc-count-head"></div>
     <div class="modal-body">
       <div class="mfield">
-        <label>Cantidad física contada</label>
+        <label>Cantidad física en buen estado</label>
         <input type="number" id="sc-count-input" min="0" inputmode="numeric" placeholder="0" style="font-size:22px;font-weight:600;text-align:center;padding:12px">
       </div>
-      <div style="font-size:11px;color:var(--text3)">Si no encontraste el producto, ingresa 0 — es obligatorio registrar todos los productos de la lista.</div>
+      <div class="mfield">
+        <label>Cantidad dañada</label>
+        <input type="number" id="sc-count-danado" min="0" inputmode="numeric" placeholder="0" value="0" style="font-size:18px;font-weight:600;text-align:center;padding:10px">
+      </div>
+      <div style="font-size:11px;color:var(--text3)">Si no encontraste el producto, deja ambos en 0 — es obligatorio registrar todos los productos de la lista.</div>
     </div>
     <div class="modal-foot">
       <button class="mbtn mbtn-cancel" onclick="closeCountModal()">Cancelar</button>
@@ -613,7 +618,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyCERzTYe_UyZcbMmo9wdcm7ZyiWnNfEt2-4t-u1iw8qQN4ITZy5YSTSywmZ04RrXBnuQ/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzqqxBY5QsjSt6J7XOfyxkHG1SsssVFq0-qiBDJLEi3Mh73rdwAe-CITlKXHpRj3IzXQQ/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1430,8 +1435,7 @@ async function doLoginScanner(){
     const d=await r.json();
     if(d.ok){
       scSession={name:d.nombre,rol:d.rol};lsSet(K_SESSION_SC,scSession);onLoginScanner();
-      // Marca la entrada (check-in) del módulo de Escáner, igual que hace el módulo normal.
-      try{await postAction({action:'checkin',usuario:d.nombre,tienda:'Escáner'});}catch(e){}
+      // El check-in se marca cuando elige tienda (abajo), con la tienda real — no aquí.
     }
     else{errEl.textContent=d.error||'Usuario o PIN incorrecto.';errEl.style.display='block';}
   }catch{errEl.textContent='Sin conexión.';errEl.style.display='block';}
@@ -1489,6 +1493,17 @@ async function loadTRSelectStores(){
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
 }
 function manualRefreshTRs(){loadTRSelectStores();}
+
+let scCheckinTienda=null;
+function onScSelectStore(){
+  const tienda=document.getElementById('sc-sel-store').value;
+  renderTRList();
+  // Marca el check-in (entrada) con la tienda real la primera vez que la elige en esta sesión.
+  if(tienda&&tienda!==scCheckinTienda){
+    scCheckinTienda=tienda;
+    postAction({action:'checkin',usuario:scSession.name,tienda}).catch(()=>{});
+  }
+}
 
 function renderTRList(){
   const tienda=document.getElementById('sc-sel-store').value;
@@ -1574,8 +1589,9 @@ function renderScanList(){
       // más un aviso (sin cifras) cuando ese conteo no coincidió con lo pickeado.
       let tag='<span class="tag-pend">Pendiente</span>',rowClass='';
       if(c){
-        if(c.coincide){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
-        else{rowClass=' counted-other';tag=`<span class="tag-ok-other" style="color:var(--amber);background:var(--amber-bg)"><i class="ti ti-alert-triangle"></i> ${c.cantidad_fisica}</span>`;}
+        const danadoTxt=c.cantidad_danada>0?` (+${c.cantidad_danada} dañado)`:'';
+        if(c.coincide){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}${danadoTxt}</span>`;}
+        else{rowClass=' counted-other';tag=`<span class="tag-ok-other" style="color:var(--amber);background:var(--amber-bg)"><i class="ti ti-alert-triangle"></i> ${c.cantidad_fisica}${danadoTxt}</span>`;}
       }
       const tid='sct_'+p.ean.replace(/\W/g,'_');
       const thumb=p.imagen?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-package"></i></div>`;
@@ -1597,8 +1613,12 @@ function openCountModal(ean){
   const p=scPrecarga.find(x=>x.ean===ean);if(!p)return;
   scEditingEAN=ean;
   const c=scConteos[ean];
+  const imgBox=document.getElementById('sc-count-img');
+  if(p.imagen){imgBox.innerHTML='<div class="modal-img-banner" id="sc-count-banner"></div>';fixedImg(p.imagen,'sc-count-banner',true);}
+  else imgBox.innerHTML='<div class="modal-img-ph"><i class="ti ti-photo"></i></div>';
   document.getElementById('sc-count-head').innerHTML=`<div class="modal-title">${p.nombre||'(sin nombre)'}</div><div class="modal-ean">${p.ean} · TR ${scCurrentTR}</div>`;
   document.getElementById('sc-count-input').value=c?c.cantidad_fisica:'';
+  document.getElementById('sc-count-danado').value=c?(c.cantidad_danada||0):0;
   document.getElementById('modal-count-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('sc-count-input').focus(),100);
 }
@@ -1606,32 +1626,36 @@ function closeCountModal(e){if(e&&e.target!==document.getElementById('modal-coun
 
 async function submitScanCount(){
   const val=document.getElementById('sc-count-input').value;
+  const valDan=document.getElementById('sc-count-danado').value;
   if(val===''||isNaN(Number(val))||Number(val)<0){toast('Ingresa una cantidad válida (puede ser 0)');return;}
-  const cantidad=Number(val);
+  if(valDan===''||isNaN(Number(valDan))||Number(valDan)<0){toast('Ingresa una cantidad dañada válida (puede ser 0)');return;}
+  const cantidad=Number(val),danado=Number(valDan);
   const p=scPrecarga.find(x=>x.ean===scEditingEAN);if(!p)return;
-  if(cantidad!==p.cantidad){
+  // El total físico (buen estado + dañado) es lo que debe cuadrar contra la precarga.
+  if(cantidad+danado!==p.cantidad){
     // Conteo ciego: nunca se muestra la cantidad precargada, solo se pide confirmar.
     document.getElementById('sc-mismatch-detail').textContent='Revisa nuevamente el producto antes de confirmar.';
     document.getElementById('modal-mismatch-overlay').classList.add('open');
     return;
   }
-  await doSaveScanCount(cantidad,false);
+  await doSaveScanCount(cantidad,danado,false);
 }
 function mismatchNo(){document.getElementById('modal-mismatch-overlay').classList.remove('open');}
 async function mismatchYes(){
   document.getElementById('modal-mismatch-overlay').classList.remove('open');
   const cantidad=Number(document.getElementById('sc-count-input').value);
-  await doSaveScanCount(cantidad,true);
+  const danado=Number(document.getElementById('sc-count-danado').value);
+  await doSaveScanCount(cantidad,danado,true);
 }
 
-async function doSaveScanCount(cantidad,confirmado){
+async function doSaveScanCount(cantidad,danado,confirmado){
   closeCountModal();toast('Guardando...');
   try{
-    const params=new URLSearchParams({action:'saveScanCount',tr:scCurrentTR,ean:scEditingEAN,cantidad_fisica:cantidad,usuario:scSession.name,confirmado:confirmado?'true':'false'});
+    const params=new URLSearchParams({action:'saveScanCount',tr:scCurrentTR,ean:scEditingEAN,cantidad_fisica:cantidad,cantidad_danada:danado,usuario:scSession.name,confirmado:confirmado?'true':'false'});
     const r=await fetch(getUrl(),{method:'POST',body:params});
     const d=await r.json();
     if(d.ok){
-      scConteos[scEditingEAN]={ean:scEditingEAN,cantidad_fisica:cantidad,cantidad_precargada:d.cantidad_precargada,coincide:d.coincide,usuario:scSession.name,ts:new Date().toISOString()};
+      scConteos[scEditingEAN]={ean:scEditingEAN,cantidad_fisica:cantidad,cantidad_danada:danado,cantidad_precargada:d.cantidad_precargada,coincide:d.coincide,usuario:scSession.name,ts:new Date().toISOString()};
       renderScanList();
       toast(d.coincide?'Guardado ✓':'Guardado con diferencia ⚠️');
     }else toast('Error: '+d.error);
@@ -1654,6 +1678,13 @@ async function closeOrdenClient(){
 // --- Cámara / escaneo de código de barras ---
 let html5QrCodeInstance=null;
 async function openScanner(){
+  // Si quedó una instancia previa a medio cerrar, la liberamos primero — si no, el navegador
+  // puede negar el acceso a la cámara por creer que sigue en uso (y el lector "no abre").
+  if(html5QrCodeInstance){
+    try{await html5QrCodeInstance.stop();}catch(e){}
+    try{await html5QrCodeInstance.clear();}catch(e){}
+    html5QrCodeInstance=null;
+  }
   document.getElementById('modal-scan-overlay').classList.add('open');
   try{
     html5QrCodeInstance=new Html5Qrcode('scan-reader',{
@@ -1666,9 +1697,7 @@ async function openScanner(){
       verbose:false
     });
     await html5QrCodeInstance.start(
-      // Pedimos alta resolución: con más detalle en la imagen el lector ya no necesita
-      // que acerques tanto el celular al código de barras.
-      {facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},
+      {facingMode:'environment'},
       {
         fps:12,
         // Recuadro grande y apaisado (mejor para códigos de barras 1D) — casi todo el ancho de la cámara
@@ -1679,8 +1708,10 @@ async function openScanner(){
       onScanDecoded,
       ()=>{}
     );
-    // Mejores esfuerzos, no todos los navegadores/dispositivos los soportan:
-    try{ await html5QrCodeInstance.applyVideoConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+    // Mejor esfuerzo — mayor resolución/enfoque/zoom si el dispositivo lo soporta.
+    // Se piden DESPUÉS de que la cámara ya abrió, para que un rechazo de estas
+    // opciones nunca impida que el lector funcione.
+    try{ await html5QrCodeInstance.applyVideoConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}); }catch(e){}
     try{
       const caps=html5QrCodeInstance.getRunningTrackCapabilities();
       if(caps && caps.zoom && caps.zoom.max>caps.zoom.min){
@@ -1692,13 +1723,20 @@ async function openScanner(){
         slider.oninput=()=>{ if(html5QrCodeInstance)html5QrCodeInstance.applyVideoConstraints({advanced:[{zoom:Number(slider.value)}]}).catch(()=>{}); };
       }
     }catch(e){}
-  }catch(e){toast('No se pudo acceder a la cámara');closeScannerModal();}
+  }catch(e){
+    toast('No se pudo abrir la cámara: '+(e&&e.message?e.message:e));
+    closeScannerModal();
+  }
 }
-function closeScannerModal(e){
+async function closeScannerModal(e){
   if(e&&e.target!==document.getElementById('modal-scan-overlay'))return;
   document.getElementById('modal-scan-overlay').classList.remove('open');
   document.getElementById('sc-zoom-wrap').style.display='none';
-  if(html5QrCodeInstance){const inst=html5QrCodeInstance;html5QrCodeInstance=null;inst.stop().then(()=>inst.clear()).catch(()=>{});}
+  if(html5QrCodeInstance){
+    const inst=html5QrCodeInstance;html5QrCodeInstance=null;
+    try{await inst.stop();}catch(e){}
+    try{await inst.clear();}catch(e){}
+  }
 }
 function onScanDecoded(decodedText){
   const ean=String(decodedText).trim();
