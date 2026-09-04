@@ -200,7 +200,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tr-card-pct{font-size:13px;font-weight:600;color:var(--text2);min-width:60px;text-align:right}
 .scan-fab{position:fixed;bottom:22px;right:18px;width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;border:none;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:80}
 .scan-fab:hover{background:var(--green-dk)}
-.scanner-video-wrap{width:100%;background:#000;border-radius:var(--rl) var(--rl) 0 0;overflow:hidden;position:relative;aspect-ratio:1/1}
+.scanner-video-wrap{width:100%;background:#000;border-radius:var(--rl) var(--rl) 0 0;overflow:hidden;position:relative;aspect-ratio:4/3;min-height:320px}
 #scan-reader{width:100%;height:100%}
 .scanner-hint{padding:12px 16px;font-size:12px;color:var(--text2);text-align:center}
 .mismatch-icon{width:44px;height:44px;border-radius:50%;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;flex-shrink:0}
@@ -210,6 +210,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .escaner-progress-bar-wrap{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
 .escaner-progress-bar{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
 .pill-contador{background:var(--amber-bg);color:var(--amber)}
+.btn-full.audit{background:var(--amber)}
+.btn-full.audit:hover{background:#92620a}
 </style>
 </head>
 <body>
@@ -226,7 +228,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn-full" onclick="doLogin()">Entrar</button>
     <div class="auth-divider">¿No tienes cuenta?</div>
     <button class="btn-full secondary" onclick="showScreen('scr-signup')">Registrarse</button>
-    <div class="link-alt" onclick="goToScannerModule()"><i class="ti ti-barcode"></i> Acceso Contadores (Escáner)</div>
+    <div class="auth-divider">&nbsp;</div>
+    <button class="btn-full audit" onclick="goToScannerModule()"><i class="ti ti-barcode"></i> Acceso a Auditoría</button>
   </div></div>
 </div>
 
@@ -485,6 +488,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="main-page">
     <div class="top-bar">
       <div class="top-logo"><div class="mc-logo" style="background:var(--amber)">TR</div><span>Escáner de Conteo</span></div>
+      <span class="role-badge" id="sc-role-badge" style="background:var(--amber-bg);color:var(--amber)">—</span>
       <button class="btn-ghost" onclick="manualRefreshTRs()"><i class="ti ti-refresh"></i></button>
       <div class="avatar" id="av-scanner" onclick="logoutScanner()" title="Cerrar sesión">?</div>
     </div>
@@ -506,6 +510,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="content" style="padding-bottom:5rem">
       <div id="sc-cerrada-banner" style="display:none"></div>
+      <button class="btn-full" id="sc-btn-cerrar" onclick="closeOrdenClient()" style="margin-bottom:1rem;background:var(--red);display:none"><i class="ti ti-lock"></i> Cerrar orden</button>
       <div class="escaner-progress">
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px"><span id="sc-progress-txt">0 / 0 contados</span><span id="sc-progress-pct">0%</span></div>
@@ -519,10 +524,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fpill active" onclick="setScFilter('all',this)">Todos</div>
         <div class="fpill" onclick="setScFilter('pending',this)">Pendientes</div>
         <div class="fpill" onclick="setScFilter('counted',this)">Contados</div>
-        <div class="fpill" onclick="setScFilter('mismatch',this)">⚠️ Con diferencia</div>
       </div>
       <div id="sc-product-area"></div>
-      <button class="btn-full" id="sc-btn-cerrar" onclick="closeOrdenClient()" style="margin-top:1rem;background:var(--red);display:none"><i class="ti ti-lock"></i> Cerrar orden</button>
     </div>
     <button class="scan-fab" id="sc-fab" onclick="openScanner()" title="Escanear producto"><i class="ti ti-barcode"></i></button>
   </div>
@@ -530,7 +533,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <!-- MODAL: CÁMARA ESCÁNER -->
 <div id="modal-scan-overlay" class="modal-overlay" onclick="closeScannerModal(event)">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;width:96vw">
     <div class="scanner-video-wrap"><div id="scan-reader"></div></div>
     <div class="scanner-hint"><i class="ti ti-focus-2"></i> Apunta la cámara al código de barras del producto</div>
     <div class="modal-foot"><button class="mbtn mbtn-cancel" style="width:100%" onclick="closeScannerModal()">Cancelar</button></div>
@@ -593,7 +596,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwIFNHtCG_LIQFlnIWBSi-fUJP_tA7fxPsDUuxki9mE9l-thfsZCmHyF21X6ROlAt4-Jw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbz_Ja35XIizFwvvDQGw1dued9S3IgGo6d1BenitqiRrt-gSRfB-6Hik6D_MIKvXhj9KZw/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){location.search='?modulo=escaner';}
@@ -1441,6 +1444,8 @@ function logoutScanner(){
 function onLoginScanner(){
   const initials=scSession.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   ['av-scanner','av-scanner-work'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=initials;});
+  const badge=document.getElementById('sc-role-badge');
+  if(badge)badge.textContent=scSession.rol==='admin'?'Auditor':'Contador';
   showScreen('scr-scanner-select');
   loadTRSelectStores();
 }
@@ -1542,16 +1547,17 @@ function renderScanList(){
     html='<div class="prod-list">';
     fil.forEach(p=>{
       const c=scConteos[p.ean];
+      // Conteo ciego: no se muestra la cantidad esperada ni si hubo o no diferencia, solo lo que la persona contó.
       let tag='<span class="tag-pend">Pendiente</span>',rowClass='';
-      if(c){
-        if(c.coincide){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
-        else{rowClass=' counted-other';tag=`<span class="tag-ok-other" style="color:var(--amber);background:var(--amber-bg)"><i class="ti ti-alert-triangle"></i> ${c.cantidad_fisica} (esperado ${p.cantidad})</span>`;}
-      }
-      html+=`<div class="prod-row${rowClass}" onclick="${scOrdenCerrada?'':`openCountModal('${p.ean}')`}" role="button" tabindex="0"><div class="prod-ph"><i class="ti ti-package"></i></div><div class="prod-info"><div class="prod-name">${p.nombre||'(sin nombre)'}</div><div class="prod-ean">${p.ean}</div></div>${tag}</div>`;
+      if(c){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
+      const tid='sct_'+p.ean.replace(/\W/g,'_');
+      const thumb=p.imagen?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-package"></i></div>`;
+      html+=`<div class="prod-row${rowClass}" onclick="${scOrdenCerrada?'':`openCountModal('${p.ean}')`}" role="button" tabindex="0">${thumb}<div class="prod-info"><div class="prod-name">${p.nombre||'(sin nombre)'}</div><div class="prod-ean">${p.ean}</div></div>${tag}</div>`;
     });
     html+='</div>';
   }
   area.innerHTML=html;
+  fil.forEach(p=>{if(!p.imagen)return;const tid='sct_'+p.ean.replace(/\W/g,'_');if(document.getElementById(tid))fixedImg(p.imagen,tid,false);});
   document.getElementById('sc-progress-txt').textContent=`${contados} / ${total} contados`;
   const pct=total?Math.round(contados/total*100):0;
   document.getElementById('sc-progress-pct').textContent=pct+'%';
@@ -1577,7 +1583,8 @@ async function submitScanCount(){
   const cantidad=Number(val);
   const p=scPrecarga.find(x=>x.ean===scEditingEAN);if(!p)return;
   if(cantidad!==p.cantidad){
-    document.getElementById('sc-mismatch-detail').textContent=`Contaste ${cantidad}, mientras que la precarga indica ${p.cantidad}. Revisa nuevamente.`;
+    // Conteo ciego: nunca se muestra la cantidad precargada, solo se pide confirmar.
+    document.getElementById('sc-mismatch-detail').textContent='Revisa nuevamente el producto antes de confirmar.';
     document.getElementById('modal-mismatch-overlay').classList.add('open');
     return;
   }
@@ -1622,10 +1629,27 @@ let html5QrCodeInstance=null;
 async function openScanner(){
   document.getElementById('modal-scan-overlay').classList.add('open');
   try{
-    html5QrCodeInstance=new Html5Qrcode('scan-reader');
+    html5QrCodeInstance=new Html5Qrcode('scan-reader',{
+      formatsToSupport:[
+        Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.QR_CODE
+      ],
+      verbose:false
+    });
     await html5QrCodeInstance.start(
       {facingMode:'environment'},
-      {fps:10,qrbox:{width:250,height:150}},
+      {
+        fps:12,
+        // Recuadro grande y apaisado (mejor para códigos de barras 1D) — casi todo el ancho de la cámara
+        qrbox:(viewfinderWidth,viewfinderHeight)=>{
+          const w=Math.floor(Math.min(viewfinderWidth,viewfinderHeight)*0.9)||Math.floor(viewfinderWidth*0.9);
+          return {width:Math.floor(viewfinderWidth*0.9),height:Math.max(120,Math.floor(viewfinderHeight*0.45))};
+        },
+        aspectRatio:1.333,
+        disableFlip:false
+      },
       onScanDecoded,
       ()=>{}
     );
@@ -1651,12 +1675,13 @@ async function loadEscanerResumen(){
   try{
     const r=await fetch(getUrl()+'?action=getEscanerResumen');const d=await r.json();
     if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-barcode"></i>Sin precarga registrada aún</div>';return;}
-    let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>';
+    let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Diferencias</th><th>Estado</th><th></th></tr></thead><tbody>';
     d.data.forEach(o=>{
       const pct=o.total?Math.round(o.contados/o.total*100):0;
       const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
       const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
-      html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
+      const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
+      html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
     });
     html+='</tbody></table></div>';area.innerHTML=html;
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error</div>';}
