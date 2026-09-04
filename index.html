@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Misiones Chedraui</title>
+<title>Punto de Control</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23E50000'/><path d='M4 17 C4 13 8 12 11 14 C12 15 13 15 14 14 C15 13 16 12 16 12 C16 12 17 13 18 14 C19 15 20 15 21 14 C24 12 28 13 28 17 C28 20 25 20 23 18 C21 16 20 17 18 18 C17 19 16 19 16 19 C16 19 15 19 14 18 C12 17 11 16 9 18 C7 20 4 20 4 17 Z' fill='white'/></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/blueimp-load-image@5.16.0/js/load-image.all.min.js"></script>
@@ -212,14 +212,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pill-contador{background:var(--amber-bg);color:var(--amber)}
 .btn-full.audit{background:var(--amber)}
 .btn-full.audit:hover{background:#92620a}
+.fpill.warn{border-color:var(--amber-b);color:var(--amber)}
+.fpill.warn.active{background:var(--amber);color:#fff;border-color:var(--amber)}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
 
+<!-- BIENVENIDA: selector de módulo -->
+<div id="scr-landing" class="screen active">
+  <div class="auth-page"><div class="auth-card" style="text-align:center">
+    <div class="auth-logo" style="margin:0 auto 1.25rem;background:var(--bg2)"><i class="ti ti-building-warehouse" style="font-size:26px"></i></div>
+    <h1>Punto de Control</h1><p class="sub" style="margin-bottom:1.5rem">¿A qué quieres entrar?</p>
+    <button class="btn-full" style="padding:16px;font-size:16px" onclick="showScreen('scr-login')"><i class="ti ti-clipboard-check"></i> Misiones Chedraui</button>
+    <button class="btn-full audit" style="padding:16px;font-size:16px;margin-top:10px" onclick="showScreen('scr-login-scanner')"><i class="ti ti-barcode"></i> Auditoría</button>
+  </div></div>
+</div>
+
 <!-- LOGIN -->
-<div id="scr-login" class="screen active">
+<div id="scr-login" class="screen">
   <div class="auth-page"><div class="auth-card">
+    <div class="link-alt" style="text-align:left;margin-top:0;margin-bottom:14px" onclick="showScreen('scr-landing')"><i class="ti ti-arrow-left"></i> Volver</div>
     <div class="auth-logo" style="background:#FF441B"><span style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px">MC</span></div>
     <h1>Misiones Chedraui</h1><p class="sub">Inicia sesión con tu cuenta</p>
     <div class="field"><label>Nombre</label><input type="text" id="l-name" placeholder="Tu nombre..." autocomplete="off"></div>
@@ -228,8 +241,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn-full" onclick="doLogin()">Entrar</button>
     <div class="auth-divider">¿No tienes cuenta?</div>
     <button class="btn-full secondary" onclick="showScreen('scr-signup')">Registrarse</button>
-    <div class="auth-divider">&nbsp;</div>
-    <button class="btn-full audit" onclick="goToScannerModule()"><i class="ti ti-barcode"></i> Acceso a Auditoría</button>
   </div></div>
 </div>
 
@@ -403,7 +414,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <!-- TAB ESCÁNER -->
       <div id="tab-escaner" class="admin-section">
-        <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">Progreso de las órdenes de conteo con escáner, agrupadas por TR (transferencia/traspaso). La precarga se administra desde la pestaña "Precarga" del Google Sheet (columnas: TR, Tienda, EAN, Nombre, Cantidad).</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">Progreso de las órdenes de conteo con escáner, agrupadas por TR (transferencia/traspaso). La precarga se administra desde la pestaña "Precarga" del Google Sheet, con las mismas columnas que "Productos" más TR y Cantidad: TR, Tienda, WH_id, EAN, Nombre, Imagen (URL), Cantidad.</p>
         <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
           <button class="btn-ghost" onclick="loadEscanerResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
         </div>
@@ -454,7 +465,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn-full" onclick="doLoginScanner()">Entrar</button>
     <div class="auth-divider">¿No tienes cuenta?</div>
     <button class="btn-full secondary" onclick="showScreen('scr-signup-scanner')">Registrarse</button>
-    <div class="link-alt" onclick="leaveScannerModule()"><i class="ti ti-arrow-left"></i> Volver a Misiones Chedraui</div>
+    <div class="link-alt" onclick="leaveScannerModule()"><i class="ti ti-arrow-left"></i> Volver</div>
   </div></div>
 </div>
 
@@ -524,6 +535,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fpill active" onclick="setScFilter('all',this)">Todos</div>
         <div class="fpill" onclick="setScFilter('pending',this)">Pendientes</div>
         <div class="fpill" onclick="setScFilter('counted',this)">Contados</div>
+        <div class="fpill warn" onclick="setScFilter('mismatch',this)">⚠️ Con diferencia</div>
       </div>
       <div id="sc-product-area"></div>
     </div>
@@ -535,7 +547,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="modal-scan-overlay" class="modal-overlay" onclick="closeScannerModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;width:96vw">
     <div class="scanner-video-wrap"><div id="scan-reader"></div></div>
-    <div class="scanner-hint"><i class="ti ti-focus-2"></i> Apunta la cámara al código de barras del producto</div>
+    <div id="sc-zoom-wrap" style="display:none;align-items:center;gap:8px;padding:10px 16px 0">
+      <i class="ti ti-zoom-in" style="color:var(--text2)"></i>
+      <input type="range" id="sc-zoom-slider" style="flex:1">
+      <i class="ti ti-zoom-in" style="color:var(--text2);font-size:18px"></i>
+    </div>
+    <div class="scanner-hint"><i class="ti ti-focus-2"></i> Si no lee, acerca o aleja un poco, o usa el zoom de arriba</div>
     <div class="modal-foot"><button class="mbtn mbtn-cancel" style="width:100%" onclick="closeScannerModal()">Cancelar</button></div>
   </div>
 </div>
@@ -596,11 +613,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbz_Ja35XIizFwvvDQGw1dued9S3IgGo6d1BenitqiRrt-gSRfB-6Hik6D_MIKvXhj9KZw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyCERzTYe_UyZcbMmo9wdcm7ZyiWnNfEt2-4t-u1iw8qQN4ITZy5YSTSywmZ04RrXBnuQ/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
-function goToScannerModule(){location.search='?modulo=escaner';}
-function leaveScannerModule(){location.search='';}
+function goToScannerModule(){showScreen('scr-login-scanner');}
+function leaveScannerModule(){showScreen('scr-landing');}
 const imgCache={};
 function debounce(fn,ms){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms);}}
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
@@ -1411,7 +1428,11 @@ async function doLoginScanner(){
   try{
     const r=await fetch(`${getUrl()}?action=login&nombre=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&modulo=escaner`);
     const d=await r.json();
-    if(d.ok){scSession={name:d.nombre,rol:d.rol};lsSet(K_SESSION_SC,scSession);onLoginScanner();}
+    if(d.ok){
+      scSession={name:d.nombre,rol:d.rol};lsSet(K_SESSION_SC,scSession);onLoginScanner();
+      // Marca la entrada (check-in) del módulo de Escáner, igual que hace el módulo normal.
+      try{await postAction({action:'checkin',usuario:d.nombre,tienda:'Escáner'});}catch(e){}
+    }
     else{errEl.textContent=d.error||'Usuario o PIN incorrecto.';errEl.style.display='block';}
   }catch{errEl.textContent='Sin conexión.';errEl.style.display='block';}
 }
@@ -1434,11 +1455,13 @@ async function doSignupScanner(){
   }catch{errEl.textContent='Sin conexión.';errEl.style.display='block';}
 }
 
-function logoutScanner(){
-  if(!confirm('¿Cerrar sesión?'))return;
+async function logoutScanner(){
+  if(!confirm('¿Cerrar sesión? Se registrará tu salida.'))return;
+  // Marca la salida (check-out) antes de limpiar la sesión local.
+  try{if(scSession)await postAction({action:'checkout',usuario:scSession.name});}catch(e){}
   stopScSync();scSession=null;localStorage.removeItem(K_SESSION_SC);
   document.getElementById('sc-l-name').value='';document.getElementById('sc-l-pin').value='';
-  showScreen('scr-login-scanner');
+  showScreen('scr-landing');
 }
 
 function onLoginScanner(){
@@ -1547,9 +1570,13 @@ function renderScanList(){
     html='<div class="prod-list">';
     fil.forEach(p=>{
       const c=scConteos[p.ean];
-      // Conteo ciego: no se muestra la cantidad esperada ni si hubo o no diferencia, solo lo que la persona contó.
+      // Conteo ciego: nunca se muestra la cantidad esperada (precarga) — solo lo que la persona contó,
+      // más un aviso (sin cifras) cuando ese conteo no coincidió con lo pickeado.
       let tag='<span class="tag-pend">Pendiente</span>',rowClass='';
-      if(c){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
+      if(c){
+        if(c.coincide){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
+        else{rowClass=' counted-other';tag=`<span class="tag-ok-other" style="color:var(--amber);background:var(--amber-bg)"><i class="ti ti-alert-triangle"></i> ${c.cantidad_fisica}</span>`;}
+      }
       const tid='sct_'+p.ean.replace(/\W/g,'_');
       const thumb=p.imagen?`<div class="prod-thumb" id="${tid}"></div>`:`<div class="prod-ph"><i class="ti ti-package"></i></div>`;
       html+=`<div class="prod-row${rowClass}" onclick="${scOrdenCerrada?'':`openCountModal('${p.ean}')`}" role="button" tabindex="0">${thumb}<div class="prod-info"><div class="prod-name">${p.nombre||'(sin nombre)'}</div><div class="prod-ean">${p.ean}</div></div>${tag}</div>`;
@@ -1639,25 +1666,38 @@ async function openScanner(){
       verbose:false
     });
     await html5QrCodeInstance.start(
-      {facingMode:'environment'},
+      // Pedimos alta resolución: con más detalle en la imagen el lector ya no necesita
+      // que acerques tanto el celular al código de barras.
+      {facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},
       {
         fps:12,
         // Recuadro grande y apaisado (mejor para códigos de barras 1D) — casi todo el ancho de la cámara
-        qrbox:(viewfinderWidth,viewfinderHeight)=>{
-          const w=Math.floor(Math.min(viewfinderWidth,viewfinderHeight)*0.9)||Math.floor(viewfinderWidth*0.9);
-          return {width:Math.floor(viewfinderWidth*0.9),height:Math.max(120,Math.floor(viewfinderHeight*0.45))};
-        },
+        qrbox:(viewfinderWidth,viewfinderHeight)=>({width:Math.floor(viewfinderWidth*0.9),height:Math.max(120,Math.floor(viewfinderHeight*0.45))}),
         aspectRatio:1.333,
         disableFlip:false
       },
       onScanDecoded,
       ()=>{}
     );
+    // Mejores esfuerzos, no todos los navegadores/dispositivos los soportan:
+    try{ await html5QrCodeInstance.applyVideoConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+    try{
+      const caps=html5QrCodeInstance.getRunningTrackCapabilities();
+      if(caps && caps.zoom && caps.zoom.max>caps.zoom.min){
+        const wrap=document.getElementById('sc-zoom-wrap'),slider=document.getElementById('sc-zoom-slider');
+        slider.min=caps.zoom.min;slider.max=caps.zoom.max;slider.step=caps.zoom.step||0.1;
+        const settings=html5QrCodeInstance.getRunningTrackSettings?html5QrCodeInstance.getRunningTrackSettings():{};
+        slider.value=settings.zoom||caps.zoom.min;
+        wrap.style.display='flex';
+        slider.oninput=()=>{ if(html5QrCodeInstance)html5QrCodeInstance.applyVideoConstraints({advanced:[{zoom:Number(slider.value)}]}).catch(()=>{}); };
+      }
+    }catch(e){}
   }catch(e){toast('No se pudo acceder a la cámara');closeScannerModal();}
 }
 function closeScannerModal(e){
   if(e&&e.target!==document.getElementById('modal-scan-overlay'))return;
   document.getElementById('modal-scan-overlay').classList.remove('open');
+  document.getElementById('sc-zoom-wrap').style.display='none';
   if(html5QrCodeInstance){const inst=html5QrCodeInstance;html5QrCodeInstance=null;inst.stop().then(()=>inst.clear()).catch(()=>{});}
 }
 function onScanDecoded(decodedText){
@@ -1692,20 +1732,20 @@ async function reopenOrdenAdmin(tr){
 }
 
 // ============================================================
-// Arranque de la aplicación — según el módulo (?modulo=escaner o normal)
+// Arranque de la aplicación — restaura sesión guardada (de cualquiera
+// de los dos módulos) o muestra la bienvenida con los 2 accesos.
 // ============================================================
-if(MODO==='escaner'){
-  try{
-    const savedSc=ls(K_SESSION_SC);
-    if(savedSc){scSession=savedSc;onLoginScanner();}
-    else showScreen('scr-login-scanner');
-  }catch(e){localStorage.removeItem(K_SESSION_SC);showScreen('scr-login-scanner');}
-}else{
+(function boot(){
   try{
     const savedSession=ls(K_SESSION);
-    if(savedSession){session=savedSession;onLogin();}
-  }catch(e){localStorage.removeItem(K_SESSION);showScreen('scr-login');}
-}
+    const savedSc=ls(K_SESSION_SC);
+    if(savedSession){session=savedSession;onLogin();return;}
+    if(savedSc){scSession=savedSc;onLoginScanner();return;}
+  }catch(e){localStorage.removeItem(K_SESSION);localStorage.removeItem(K_SESSION_SC);}
+  // Sin sesión guardada: si abrieron un link directo al módulo de Escáner, saltar la bienvenida
+  if(MODO==='escaner')showScreen('scr-login-scanner');
+  else showScreen('scr-landing');
+})();
 </script>
 </body>
 </html>
