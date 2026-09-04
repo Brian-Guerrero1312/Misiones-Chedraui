@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23E50000'/><path d='M4 17 C4 13 8 12 11 14 C12 15 13 15 14 14 C15 13 16 12 16 12 C16 12 17 13 18 14 C19 15 20 15 21 14 C24 12 28 13 28 17 C28 20 25 20 23 18 C21 16 20 17 18 18 C17 19 16 19 16 19 C16 19 15 19 14 18 C12 17 11 16 9 18 C7 20 4 20 4 17 Z' fill='white'/></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/blueimp-load-image@5.16.0/js/load-image.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{--bg:#fff;--bg2:#f6f6f4;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;--border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--green:#1D9E75;--green-bg:#E1F5EE;--green-dk:#0F6E56;--red:#A32D2D;--red-bg:#FCEBEB;--red-b:#F09595;--blue:#1860CC;--blue-bg:#E8F0FC;--amber:#B45309;--amber-bg:#FEF3C7;--amber-b:#F9A825;--r:8px;--rl:12px}
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0f0ec;--text2:#9b9b96;--text3:#6b6b67;--border:rgba(255,255,255,.10);--border2:rgba(255,255,255,.20);--green-bg:#0a3d2b;--green-dk:#5DCAA5;--red-bg:#3d1010;--red-b:#7a2020;--blue-bg:#0c1f45;--amber-bg:#2d1f00;--amber-b:#92620a}}
@@ -184,6 +185,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .toast.show{opacity:1}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{display:inline-block;animation:spin 1s linear infinite}
+/* --- Módulo Escáner (contadores) --- */
+.link-alt{display:block;text-align:center;font-size:12px;color:var(--text2);margin-top:14px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.link-alt:hover{color:var(--text)}
+.tr-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.tr-card{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;transition:border-color .15s}
+.tr-card:hover{border-color:var(--green)}
+.tr-card.cerrada{opacity:.6}
+.tr-card-info{flex:1;min-width:0}
+.tr-card-tr{font-size:14px;font-weight:600}
+.tr-card-tienda{font-size:12px;color:var(--text2);margin-top:1px}
+.tr-card-bar-wrap{width:100%;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-top:6px}
+.tr-card-bar{height:100%;background:var(--green);border-radius:3px}
+.tr-card-pct{font-size:13px;font-weight:600;color:var(--text2);min-width:60px;text-align:right}
+.scan-fab{position:fixed;bottom:22px;right:18px;width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;border:none;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:80}
+.scan-fab:hover{background:var(--green-dk)}
+.scanner-video-wrap{width:100%;background:#000;border-radius:var(--rl) var(--rl) 0 0;overflow:hidden;position:relative;aspect-ratio:1/1}
+#scan-reader{width:100%;height:100%}
+.scanner-hint{padding:12px 16px;font-size:12px;color:var(--text2);text-align:center}
+.mismatch-icon{width:44px;height:44px;border-radius:50%;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;flex-shrink:0}
+.mismatch-icon i{font-size:22px;color:var(--amber)}
+.cerrada-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--r);margin-bottom:1rem;font-size:13px;color:var(--blue);font-weight:500}
+.escaner-progress{display:flex;align-items:center;gap:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:1rem}
+.escaner-progress-bar-wrap{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.escaner-progress-bar{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.pill-contador{background:var(--amber-bg);color:var(--amber)}
 </style>
 </head>
 <body>
@@ -200,6 +226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn-full" onclick="doLogin()">Entrar</button>
     <div class="auth-divider">¿No tienes cuenta?</div>
     <button class="btn-full secondary" onclick="showScreen('scr-signup')">Registrarse</button>
+    <div class="link-alt" onclick="goToScannerModule()"><i class="ti ti-barcode"></i> Acceso Contadores (Escáner)</div>
   </div></div>
 </div>
 
@@ -324,6 +351,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="admin-tab" onclick="switchTab('tab-productividad',this)">Productividad</div>
         <div class="admin-tab" onclick="switchTab('tab-asistencia',this)">Asistencia</div>
         <div class="admin-tab" onclick="switchTab('tab-usuarios',this)">Usuarios</div>
+        <div class="admin-tab" onclick="switchTab('tab-escaner',this)">Escáner</div>
       </div>
       <div id="tab-conteos" class="admin-section active">
         <div class="controls">
@@ -369,6 +397,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <div id="users-area"><div class="empty-state"><i class="ti ti-users"></i>Cargando...</div></div>
       </div>
+
+      <!-- TAB ESCÁNER -->
+      <div id="tab-escaner" class="admin-section">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">Progreso de las órdenes de conteo con escáner, agrupadas por TR (transferencia/traspaso). La precarga se administra desde la pestaña "Precarga" del Google Sheet (columnas: TR, Tienda, EAN, Nombre, Cantidad).</p>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+          <button class="btn-ghost" onclick="loadEscanerResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
+        </div>
+        <div id="escaner-resumen-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -401,6 +438,138 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- ================== MÓDULO ESCÁNER (contadores) ================== -->
+
+<!-- LOGIN ESCÁNER -->
+<div id="scr-login-scanner" class="screen">
+  <div class="auth-page"><div class="auth-card">
+    <div class="auth-logo" style="background:var(--amber-bg)"><i class="ti ti-barcode" style="color:var(--amber);font-size:26px"></i></div>
+    <h1>Escáner de Conteo</h1><p class="sub">Misiones Chedraui · Módulo de contadores</p>
+    <div class="field"><label>Nombre</label><input type="text" id="sc-l-name" placeholder="Tu nombre..." autocomplete="off"></div>
+    <div class="field"><label>PIN (4 dígitos)</label><input type="password" id="sc-l-pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
+    <div id="sc-l-err" class="err-msg"></div>
+    <button class="btn-full" onclick="doLoginScanner()">Entrar</button>
+    <div class="auth-divider">¿No tienes cuenta?</div>
+    <button class="btn-full secondary" onclick="showScreen('scr-signup-scanner')">Registrarse</button>
+    <div class="link-alt" onclick="leaveScannerModule()"><i class="ti ti-arrow-left"></i> Volver a Misiones Chedraui</div>
+  </div></div>
+</div>
+
+<!-- SIGNUP ESCÁNER -->
+<div id="scr-signup-scanner" class="screen">
+  <div class="auth-page"><div class="auth-card">
+    <div class="auth-logo"><i class="ti ti-user-plus"></i></div>
+    <h1>Crear cuenta de contador</h1><p class="sub">Tu solicitud será aprobada por un administrador</p>
+    <div class="field"><label>Nombre completo</label><input type="text" id="sc-s-name" placeholder="Tu nombre..." autocomplete="off"></div>
+    <div class="field"><label>PIN (4 dígitos)</label><input type="password" id="sc-s-pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
+    <div class="field"><label>Confirmar PIN</label><input type="password" id="sc-s-pin2" class="pin-input" maxlength="4" inputmode="numeric" placeholder="····"></div>
+    <div id="sc-s-err" class="err-msg"></div>
+    <button class="btn-full" onclick="doSignupScanner()">Solicitar acceso</button>
+    <div class="auth-divider">¿Ya tienes cuenta?</div>
+    <button class="btn-full secondary" onclick="showScreen('scr-login-scanner')">Iniciar sesión</button>
+  </div></div>
+</div>
+
+<!-- PENDING ESCÁNER -->
+<div id="scr-pending-scanner" class="screen">
+  <div class="auth-page"><div class="auth-card" style="text-align:center">
+    <div class="auth-logo" style="margin:0 auto 1.5rem"><i class="ti ti-clock"></i></div>
+    <h1>Solicitud enviada</h1>
+    <p class="sub" style="margin-bottom:1.5rem">Tu cuenta está pendiente de aprobación. Regresa más tarde.</p>
+    <button class="btn-full secondary" onclick="showScreen('scr-login-scanner')">Volver al login</button>
+  </div></div>
+</div>
+
+<!-- SELECCIÓN DE TR (orden a contar) -->
+<div id="scr-scanner-select" class="screen">
+  <div class="main-page">
+    <div class="top-bar">
+      <div class="top-logo"><div class="mc-logo" style="background:var(--amber)">TR</div><span>Escáner de Conteo</span></div>
+      <button class="btn-ghost" onclick="manualRefreshTRs()"><i class="ti ti-refresh"></i></button>
+      <div class="avatar" id="av-scanner" onclick="logoutScanner()" title="Cerrar sesión">?</div>
+    </div>
+    <div class="content">
+      <div class="ctrl-field" style="margin-bottom:1rem"><label>Tienda</label><select id="sc-sel-store" onchange="renderTRList()"><option value="">— Seleccionar tienda —</option></select></div>
+      <div id="sc-tr-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda para ver sus TR pendientes</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANTALLA DE TRABAJO: CONTEO DE UN TR -->
+<div id="scr-scanner-work" class="screen">
+  <div class="main-page">
+    <div class="top-bar">
+      <button class="btn-ghost" onclick="backToTRSelect()"><i class="ti ti-arrow-left"></i></button>
+      <div class="top-logo" style="min-width:0"><span id="sc-work-title">TR —</span></div>
+      <div id="sync-ind-scanner" class="sync-indicator"><span class="sync-dot" id="sync-dot-scanner"></span><span id="sync-txt-scanner">—</span></div>
+      <div class="avatar" id="av-scanner-work" onclick="logoutScanner()" title="Cerrar sesión">?</div>
+    </div>
+    <div class="content" style="padding-bottom:5rem">
+      <div id="sc-cerrada-banner" style="display:none"></div>
+      <div class="escaner-progress">
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px"><span id="sc-progress-txt">0 / 0 contados</span><span id="sc-progress-pct">0%</span></div>
+          <div class="escaner-progress-bar-wrap"><div class="escaner-progress-bar" id="sc-progress-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="ctrl-field"><label>Buscar</label><input type="text" id="sc-search" oninput="renderScanList()" placeholder="Nombre o EAN..."></div>
+      </div>
+      <div class="filter-pills">
+        <div class="fpill active" onclick="setScFilter('all',this)">Todos</div>
+        <div class="fpill" onclick="setScFilter('pending',this)">Pendientes</div>
+        <div class="fpill" onclick="setScFilter('counted',this)">Contados</div>
+        <div class="fpill" onclick="setScFilter('mismatch',this)">⚠️ Con diferencia</div>
+      </div>
+      <div id="sc-product-area"></div>
+      <button class="btn-full" id="sc-btn-cerrar" onclick="closeOrdenClient()" style="margin-top:1rem;background:var(--red);display:none"><i class="ti ti-lock"></i> Cerrar orden</button>
+    </div>
+    <button class="scan-fab" id="sc-fab" onclick="openScanner()" title="Escanear producto"><i class="ti ti-barcode"></i></button>
+  </div>
+</div>
+
+<!-- MODAL: CÁMARA ESCÁNER -->
+<div id="modal-scan-overlay" class="modal-overlay" onclick="closeScannerModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="scanner-video-wrap"><div id="scan-reader"></div></div>
+    <div class="scanner-hint"><i class="ti ti-focus-2"></i> Apunta la cámara al código de barras del producto</div>
+    <div class="modal-foot"><button class="mbtn mbtn-cancel" style="width:100%" onclick="closeScannerModal()">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR CANTIDAD CONTADA -->
+<div id="modal-count-overlay" class="modal-overlay" onclick="closeCountModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="modal-head" id="sc-count-head"></div>
+    <div class="modal-body">
+      <div class="mfield">
+        <label>Cantidad física contada</label>
+        <input type="number" id="sc-count-input" min="0" inputmode="numeric" placeholder="0" style="font-size:22px;font-weight:600;text-align:center;padding:12px">
+      </div>
+      <div style="font-size:11px;color:var(--text3)">Si no encontraste el producto, ingresa 0 — es obligatorio registrar todos los productos de la lista.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="mbtn mbtn-cancel" onclick="closeCountModal()">Cancelar</button>
+      <button class="mbtn mbtn-ok" onclick="submitScanCount()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMACIÓN DE DISCREPANCIA -->
+<div id="modal-mismatch-overlay" class="modal-overlay">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;text-align:center">
+    <div class="modal-body">
+      <div class="mismatch-icon"><i class="ti ti-alert-triangle"></i></div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px">¿Seguro de tu conteo?</div>
+      <div style="font-size:13px;color:var(--text2)" id="sc-mismatch-detail">Revisa nuevamente</div>
+    </div>
+    <div class="modal-foot">
+      <button class="mbtn mbtn-cancel" onclick="mismatchNo()">No, revisar</button>
+      <button class="mbtn mbtn-ok" onclick="mismatchYes()">Sí, guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PRODUCTO -->
 <div id="modal-overlay" class="modal-overlay" onclick="closeMod(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -422,8 +591,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxrzdW3AmKhFFeSUg_AgoGy9o5iyWGvUAGFNX7je-S3mK2S2tn8gFKj8MFPmJ-JZ7VDAA/exec';
+const K_SESSION_SC='wms_session_scanner';
+const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwIFNHtCG_LIQFlnIWBSi-fUJP_tA7fxPsDUuxki9mE9l-thfsZCmHyF21X6ROlAt4-Jw/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
+let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
+function goToScannerModule(){location.search='?modulo=escaner';}
+function leaveScannerModule(){location.search='';}
 const imgCache={};
 function debounce(fn,ms){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms);}}
 function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
@@ -616,6 +790,7 @@ function switchTab(id,el){
   document.getElementById(id).classList.add('active');el.classList.add('active');
   if(id==='tab-productividad')refreshProductividad();
   if(id==='tab-asistencia')loadAsistencia();
+  if(id==='tab-escaner')loadEscanerResumen();
 }
 
 async function loadAsistencia(){
@@ -1119,7 +1294,7 @@ async function loadUsers(){
     if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-users"></i>Sin usuarios</div>';return;}
     let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Tienda</th><th>Estado</th><th></th></tr></thead><tbody>';
     d.data.forEach((u,i)=>{
-      const rp=u.rol==='admin'?'<span class="pill pill-admin">Admin</span>':'<span class="pill pill-exec">Ejecución</span>';
+      const rp=u.rol==='admin'?'<span class="pill pill-admin">Admin</span>':u.rol==='contador'?'<span class="pill pill-contador">Contador</span>':'<span class="pill pill-exec">Ejecución</span>';
       const ep=u.estado==='activo'?'<span class="pill pill-exec">Activo</span>':'<span class="pill pill-pend">Pendiente</span>';
       const ab=u.estado!=='activo'?`<button class="btn-sm ok" onclick="approveUser(${i},'${u.nombre}')">Aprobar</button> `:'';
       html+=`<tr><td><strong>${u.nombre}</strong></td><td>${rp}</td><td>${u.tienda||'—'}</td><td>${ep}</td><td style="display:flex;gap:4px;flex-wrap:wrap">${ab}<button class="btn-sm blue" onclick="openUserModal(${i},'${u.nombre}','${u.rol}','${u.tienda||''}','${u.estado}')"><i class="ti ti-edit"></i></button><button class="btn-sm danger" onclick="deleteUser(${i},'${u.nombre}')"><i class="ti ti-trash"></i></button></td></tr>`;
@@ -1134,7 +1309,7 @@ function openUserModal(idx,nombre,rol,tienda,estado){
   const stores=Object.keys(storeData);
   const storeOpts='<option value="">— Sin asignar —</option>'+stores.map(s=>`<option value="${s}" ${tienda===s?'selected':''}>${s} — ${storeData[s]?.name||s}</option>`).join('');
   document.getElementById('user-mhead').innerHTML=`<div class="modal-title">Editar usuario</div><div class="modal-ean">${nombre}</div>`;
-  document.getElementById('user-mbody').innerHTML=`<div class="mfield"><label>Rol</label><select id="ue-rol" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px"><option value="ejecucion" ${rol!=='admin'?'selected':''}>Ejecución</option><option value="admin" ${rol==='admin'?'selected':''}>Admin</option></select></div><div class="mfield" style="margin-top:12px"><label>Tienda asignada</label><select id="ue-tienda" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px">${storeOpts}</select></div><div class="mfield" style="margin-top:12px"><label>Estado</label><select id="ue-estado" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px"><option value="activo" ${estado==='activo'?'selected':''}>Activo</option><option value="pendiente" ${estado!=='activo'?'selected':''}>Pendiente</option></select></div>`;
+  document.getElementById('user-mbody').innerHTML=`<div class="mfield"><label>Rol</label><select id="ue-rol" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px"><option value="ejecucion" ${rol!=='admin'&&rol!=='contador'?'selected':''}>Ejecución</option><option value="admin" ${rol==='admin'?'selected':''}>Admin</option><option value="contador" ${rol==='contador'?'selected':''}>Contador (Escáner)</option></select></div><div class="mfield" style="margin-top:12px"><label>Tienda asignada</label><select id="ue-tienda" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px">${storeOpts}</select></div><div class="mfield" style="margin-top:12px"><label>Estado</label><select id="ue-estado" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:14px"><option value="activo" ${estado==='activo'?'selected':''}>Activo</option><option value="pendiente" ${estado!=='activo'?'selected':''}>Pendiente</option></select></div>`;
   document.getElementById('user-mfoot').innerHTML=`<button class="mbtn mbtn-cancel" onclick="closeUserModal()">Cancelar</button><button class="mbtn mbtn-ok" onclick="saveUserEdit()">Guardar</button>`;
   document.getElementById('user-modal-overlay').classList.add('open');
 }
@@ -1219,10 +1394,293 @@ function fixedImg(url,targetId,isBanner){
   catch{imgCache[url]=url;if(el)el.style.backgroundImage=`url('${url}')`;}
 }
 
-try{
-  const savedSession=ls(K_SESSION);
-  if(savedSession){session=savedSession;onLogin();}
-}catch(e){localStorage.removeItem(K_SESSION);showScreen('scr-login');}
+// ============================================================
+// MÓDULO ESCÁNER — lógica de cliente (contadores)
+// ============================================================
+
+async function doLoginScanner(){
+  const name=document.getElementById('sc-l-name').value.trim();
+  const pin=document.getElementById('sc-l-pin').value.trim();
+  const errEl=document.getElementById('sc-l-err');
+  errEl.style.display='none';
+  if(!name||pin.length!==4){errEl.textContent='Completa todos los campos.';errEl.style.display='block';return;}
+  toast('Verificando...');
+  try{
+    const r=await fetch(`${getUrl()}?action=login&nombre=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&modulo=escaner`);
+    const d=await r.json();
+    if(d.ok){scSession={name:d.nombre,rol:d.rol};lsSet(K_SESSION_SC,scSession);onLoginScanner();}
+    else{errEl.textContent=d.error||'Usuario o PIN incorrecto.';errEl.style.display='block';}
+  }catch{errEl.textContent='Sin conexión.';errEl.style.display='block';}
+}
+
+async function doSignupScanner(){
+  const name=document.getElementById('sc-s-name').value.trim();
+  const pin=document.getElementById('sc-s-pin').value.trim();
+  const pin2=document.getElementById('sc-s-pin2').value.trim();
+  const errEl=document.getElementById('sc-s-err');
+  errEl.style.display='none';
+  if(!name){errEl.textContent='Ingresa tu nombre.';errEl.style.display='block';return;}
+  if(pin.length!==4||isNaN(Number(pin))){errEl.textContent='PIN debe ser 4 dígitos.';errEl.style.display='block';return;}
+  if(pin!==pin2){errEl.textContent='Los PINs no coinciden.';errEl.style.display='block';return;}
+  toast('Enviando solicitud...');
+  try{
+    const r=await fetch(getUrl(),{method:'POST',body:new URLSearchParams({action:'signup',nombre:name,pin,modulo:'escaner'})});
+    const d=await r.json();
+    if(d.ok)showScreen('scr-pending-scanner');
+    else{errEl.textContent=d.error||'Error.';errEl.style.display='block';}
+  }catch{errEl.textContent='Sin conexión.';errEl.style.display='block';}
+}
+
+function logoutScanner(){
+  if(!confirm('¿Cerrar sesión?'))return;
+  stopScSync();scSession=null;localStorage.removeItem(K_SESSION_SC);
+  document.getElementById('sc-l-name').value='';document.getElementById('sc-l-pin').value='';
+  showScreen('scr-login-scanner');
+}
+
+function onLoginScanner(){
+  const initials=scSession.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  ['av-scanner','av-scanner-work'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=initials;});
+  showScreen('scr-scanner-select');
+  loadTRSelectStores();
+}
+
+async function loadTRSelectStores(){
+  const area=document.getElementById('sc-tr-area');
+  try{
+    const r=await fetch(getUrl()+'?action=getPrecargaTRs');
+    const d=await r.json();
+    if(!d.ok){area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    scTiendaMap=d.tiendas||{};
+    const sel=document.getElementById('sc-sel-store');
+    const prev=sel.value;
+    sel.innerHTML='<option value="">— Seleccionar tienda —</option>';
+    Object.keys(scTiendaMap).sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+    if(prev&&scTiendaMap[prev])sel.value=prev;
+    renderTRList();
+  }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+}
+function manualRefreshTRs(){loadTRSelectStores();}
+
+function renderTRList(){
+  const tienda=document.getElementById('sc-sel-store').value;
+  const area=document.getElementById('sc-tr-area');
+  if(!tienda){area.innerHTML='<div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda para ver sus TR pendientes</div>';return;}
+  const list=(scTiendaMap[tienda]||[]).slice().sort((a,b)=>a.tr.localeCompare(b.tr));
+  if(!list.length){area.innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off"></i>No hay TR precargados para esta tienda</div>';return;}
+  let html='<div class="tr-list">';
+  list.forEach(o=>{
+    const pct=o.total?Math.round(o.contados/o.total*100):0;
+    html+=`<div class="tr-card${o.cerrada?' cerrada':''}" onclick="openTR('${o.tr}','${tienda}')"><div class="tr-card-info"><div class="tr-card-tr">TR ${o.tr} ${o.cerrada?'<i class="ti ti-lock" style="font-size:12px;color:var(--text3)"></i>':''}</div><div class="tr-card-tienda">${o.contados}/${o.total} contados</div><div class="tr-card-bar-wrap"><div class="tr-card-bar" style="width:${pct}%"></div></div></div><div class="tr-card-pct">${pct}%</div></div>`;
+  });
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+async function openTR(tr,tienda){
+  scCurrentTR=tr;scCurrentTienda=tienda;
+  document.getElementById('sc-work-title').textContent=`TR ${tr} · ${tienda}`;
+  showScreen('scr-scanner-work');
+  document.getElementById('sc-product-area').innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  await loadOrden(true);
+  startScSync();
+}
+function backToTRSelect(){stopScSync();showScreen('scr-scanner-select');loadTRSelectStores();}
+
+async function loadOrden(silent){
+  setScSyncStatus('syncing','Sincronizando...');
+  try{
+    const [rp,rc,ro]=await Promise.all([
+      fetch(`${getUrl()}?action=getPrecarga&tr=${encodeURIComponent(scCurrentTR)}`),
+      fetch(`${getUrl()}?action=getConteosEscaner&tr=${encodeURIComponent(scCurrentTR)}`),
+      fetch(`${getUrl()}?action=getOrdenStatus&tr=${encodeURIComponent(scCurrentTR)}`)
+    ]);
+    const dp=await rp.json(),dc=await rc.json(),doS=await ro.json();
+    if(!dp.ok){setScSyncStatus('err','Error');toast(dp.error||'Error al cargar precarga');return;}
+    scPrecarga=dp.data;
+    scConteos={};(dc.data||[]).forEach(c=>{scConteos[c.ean]=c;});
+    scOrdenCerrada=doS.ok&&doS.cerrada;
+    setScSyncStatus('ok',new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}));
+    renderScanList();
+    if(!silent)toast('Actualizado ✓');
+  }catch{setScSyncStatus('err','Sin conexión');}
+}
+
+function setScSyncStatus(state,msg){
+  const dot=document.getElementById('sync-dot-scanner'),txt=document.getElementById('sync-txt-scanner');
+  if(!dot||!txt)return;
+  dot.className='sync-dot '+(state==='syncing'?'syncing':state==='ok'?'ok':'err');
+  txt.textContent=msg;
+}
+function startScSync(){if(scSyncInterval)clearInterval(scSyncInterval);scSyncInterval=setInterval(()=>loadOrden(true),5*60*1000);}
+function stopScSync(){if(scSyncInterval)clearInterval(scSyncInterval);scSyncInterval=null;}
+
+function setScFilter(f,el){scFilter=f;document.querySelectorAll('#scr-scanner-work .fpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderScanList();}
+
+function renderScanList(){
+  const area=document.getElementById('sc-product-area');
+  const q=(document.getElementById('sc-search').value||'').toLowerCase().trim();
+  const banner=document.getElementById('sc-cerrada-banner');
+  const btnCerrar=document.getElementById('sc-btn-cerrar');
+  const fab=document.getElementById('sc-fab');
+  if(scOrdenCerrada){
+    banner.style.display='flex';
+    banner.innerHTML=`<div class="cerrada-banner"><i class="ti ti-lock" style="font-size:18px"></i> Esta orden ya está cerrada.</div>`;
+    btnCerrar.style.display='none';fab.style.display='none';
+  }else{
+    banner.style.display='none';fab.style.display='flex';
+  }
+  let fil=scPrecarga.filter(p=>!q||p.nombre.toLowerCase().includes(q)||p.ean.includes(q));
+  fil=fil.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const total=scPrecarga.length,contados=scPrecarga.filter(p=>scConteos[p.ean]).length,pendientes=total-contados;
+  if(scFilter==='pending')fil=fil.filter(p=>!scConteos[p.ean]);
+  if(scFilter==='counted')fil=fil.filter(p=>scConteos[p.ean]);
+  if(scFilter==='mismatch')fil=fil.filter(p=>scConteos[p.ean]&&!scConteos[p.ean].coincide);
+  let html='';
+  if(!fil.length){html='<div class="empty-state"><i class="ti ti-search"></i>Sin resultados</div>';}
+  else{
+    html='<div class="prod-list">';
+    fil.forEach(p=>{
+      const c=scConteos[p.ean];
+      let tag='<span class="tag-pend">Pendiente</span>',rowClass='';
+      if(c){
+        if(c.coincide){rowClass=' counted-me';tag=`<span class="tag-ok-me"><i class="ti ti-check"></i> ${c.cantidad_fisica}</span>`;}
+        else{rowClass=' counted-other';tag=`<span class="tag-ok-other" style="color:var(--amber);background:var(--amber-bg)"><i class="ti ti-alert-triangle"></i> ${c.cantidad_fisica} (esperado ${p.cantidad})</span>`;}
+      }
+      html+=`<div class="prod-row${rowClass}" onclick="${scOrdenCerrada?'':`openCountModal('${p.ean}')`}" role="button" tabindex="0"><div class="prod-ph"><i class="ti ti-package"></i></div><div class="prod-info"><div class="prod-name">${p.nombre||'(sin nombre)'}</div><div class="prod-ean">${p.ean}</div></div>${tag}</div>`;
+    });
+    html+='</div>';
+  }
+  area.innerHTML=html;
+  document.getElementById('sc-progress-txt').textContent=`${contados} / ${total} contados`;
+  const pct=total?Math.round(contados/total*100):0;
+  document.getElementById('sc-progress-pct').textContent=pct+'%';
+  document.getElementById('sc-progress-bar').style.width=pct+'%';
+  if(!scOrdenCerrada){btnCerrar.style.display='block';btnCerrar.disabled=pendientes>0;btnCerrar.style.opacity=pendientes>0?'.5':'1';btnCerrar.innerHTML=pendientes>0?`<i class="ti ti-lock"></i> Cerrar orden (${pendientes} pendiente${pendientes===1?'':'s'})`:`<i class="ti ti-lock"></i> Cerrar orden`;}
+}
+
+let scEditingEAN=null;
+function openCountModal(ean){
+  const p=scPrecarga.find(x=>x.ean===ean);if(!p)return;
+  scEditingEAN=ean;
+  const c=scConteos[ean];
+  document.getElementById('sc-count-head').innerHTML=`<div class="modal-title">${p.nombre||'(sin nombre)'}</div><div class="modal-ean">${p.ean} · TR ${scCurrentTR}</div>`;
+  document.getElementById('sc-count-input').value=c?c.cantidad_fisica:'';
+  document.getElementById('modal-count-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('sc-count-input').focus(),100);
+}
+function closeCountModal(e){if(e&&e.target!==document.getElementById('modal-count-overlay'))return;document.getElementById('modal-count-overlay').classList.remove('open');}
+
+async function submitScanCount(){
+  const val=document.getElementById('sc-count-input').value;
+  if(val===''||isNaN(Number(val))||Number(val)<0){toast('Ingresa una cantidad válida (puede ser 0)');return;}
+  const cantidad=Number(val);
+  const p=scPrecarga.find(x=>x.ean===scEditingEAN);if(!p)return;
+  if(cantidad!==p.cantidad){
+    document.getElementById('sc-mismatch-detail').textContent=`Contaste ${cantidad}, mientras que la precarga indica ${p.cantidad}. Revisa nuevamente.`;
+    document.getElementById('modal-mismatch-overlay').classList.add('open');
+    return;
+  }
+  await doSaveScanCount(cantidad,false);
+}
+function mismatchNo(){document.getElementById('modal-mismatch-overlay').classList.remove('open');}
+async function mismatchYes(){
+  document.getElementById('modal-mismatch-overlay').classList.remove('open');
+  const cantidad=Number(document.getElementById('sc-count-input').value);
+  await doSaveScanCount(cantidad,true);
+}
+
+async function doSaveScanCount(cantidad,confirmado){
+  closeCountModal();toast('Guardando...');
+  try{
+    const params=new URLSearchParams({action:'saveScanCount',tr:scCurrentTR,ean:scEditingEAN,cantidad_fisica:cantidad,usuario:scSession.name,confirmado:confirmado?'true':'false'});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(d.ok){
+      scConteos[scEditingEAN]={ean:scEditingEAN,cantidad_fisica:cantidad,cantidad_precargada:d.cantidad_precargada,coincide:d.coincide,usuario:scSession.name,ts:new Date().toISOString()};
+      renderScanList();
+      toast(d.coincide?'Guardado ✓':'Guardado con diferencia ⚠️');
+    }else toast('Error: '+d.error);
+  }catch{toast('Sin conexión, intenta de nuevo');}
+}
+
+async function closeOrdenClient(){
+  const pendientes=scPrecarga.filter(p=>!scConteos[p.ean]).length;
+  if(pendientes>0){toast(`Aún hay ${pendientes} producto(s) pendientes`);return;}
+  if(!confirm(`¿Cerrar la orden del TR ${scCurrentTR}? Ya no podrás editar los conteos.`))return;
+  try{
+    const params=new URLSearchParams({action:'closeOrden',tr:scCurrentTR,tienda:scCurrentTienda,usuario:scSession.name});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(d.ok){scOrdenCerrada=true;renderScanList();toast('Orden cerrada ✓');}
+    else toast('Error: '+d.error);
+  }catch{toast('Sin conexión');}
+}
+
+// --- Cámara / escaneo de código de barras ---
+let html5QrCodeInstance=null;
+async function openScanner(){
+  document.getElementById('modal-scan-overlay').classList.add('open');
+  try{
+    html5QrCodeInstance=new Html5Qrcode('scan-reader');
+    await html5QrCodeInstance.start(
+      {facingMode:'environment'},
+      {fps:10,qrbox:{width:250,height:150}},
+      onScanDecoded,
+      ()=>{}
+    );
+  }catch(e){toast('No se pudo acceder a la cámara');closeScannerModal();}
+}
+function closeScannerModal(e){
+  if(e&&e.target!==document.getElementById('modal-scan-overlay'))return;
+  document.getElementById('modal-scan-overlay').classList.remove('open');
+  if(html5QrCodeInstance){const inst=html5QrCodeInstance;html5QrCodeInstance=null;inst.stop().then(()=>inst.clear()).catch(()=>{});}
+}
+function onScanDecoded(decodedText){
+  const ean=String(decodedText).trim();
+  closeScannerModal();
+  const p=scPrecarga.find(x=>x.ean===ean);
+  if(!p){toast(`EAN ${ean} no pertenece a este TR`);return;}
+  openCountModal(ean);
+}
+
+// --- Resumen de escáner en Admin ---
+async function loadEscanerResumen(){
+  const area=document.getElementById('escaner-resumen-area');
+  area.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  try{
+    const r=await fetch(getUrl()+'?action=getEscanerResumen');const d=await r.json();
+    if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-barcode"></i>Sin precarga registrada aún</div>';return;}
+    let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>';
+    d.data.forEach(o=>{
+      const pct=o.total?Math.round(o.contados/o.total*100):0;
+      const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
+      const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
+      html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
+    });
+    html+='</tbody></table></div>';area.innerHTML=html;
+  }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error</div>';}
+}
+async function reopenOrdenAdmin(tr){
+  if(!confirm(`¿Reabrir la orden del TR ${tr}?`))return;
+  await postAction({action:'reopenOrden',tr});toast('Orden reabierta ✓');loadEscanerResumen();
+}
+
+// ============================================================
+// Arranque de la aplicación — según el módulo (?modulo=escaner o normal)
+// ============================================================
+if(MODO==='escaner'){
+  try{
+    const savedSc=ls(K_SESSION_SC);
+    if(savedSc){scSession=savedSc;onLoginScanner();}
+    else showScreen('scr-login-scanner');
+  }catch(e){localStorage.removeItem(K_SESSION_SC);showScreen('scr-login-scanner');}
+}else{
+  try{
+    const savedSession=ls(K_SESSION);
+    if(savedSession){session=savedSession;onLogin();}
+  }catch(e){localStorage.removeItem(K_SESSION);showScreen('scr-login');}
+}
 </script>
 </body>
 </html>
