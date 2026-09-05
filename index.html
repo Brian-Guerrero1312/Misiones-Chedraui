@@ -500,12 +500,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="top-bar">
       <div class="top-logo"><div class="mc-logo" style="background:var(--amber)">TR</div><span>Escáner de Conteo</span></div>
       <span class="role-badge" id="sc-role-badge" style="background:var(--amber-bg);color:var(--amber)">—</span>
+      <button class="btn-ghost" onclick="showScreen('scr-reportes');loadReportes()" title="Reportes"><i class="ti ti-chart-bar"></i></button>
       <button class="btn-ghost" onclick="manualRefreshTRs()"><i class="ti ti-refresh"></i></button>
       <div class="avatar" id="av-scanner" onclick="logoutScanner()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
       <div class="ctrl-field" style="margin-bottom:1rem"><label>Tienda</label><select id="sc-sel-store" onchange="onScSelectStore()"><option value="">— Seleccionar tienda —</option></select></div>
       <div id="sc-tr-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda para ver sus TR pendientes</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTES: exactitud y tiempos de cierre por tienda/TR (visible para contador y auditor) -->
+<div id="scr-reportes" class="screen">
+  <div class="main-page">
+    <div class="top-bar">
+      <button class="btn-ghost" onclick="showScreen('scr-scanner-select')"><i class="ti ti-arrow-left"></i></button>
+      <div class="top-logo" style="min-width:0"><span>Reportes</span></div>
+      <button class="btn-ghost" onclick="loadReportes()" title="Actualizar"><i class="ti ti-refresh"></i></button>
+    </div>
+    <div class="content">
+      <div class="controls" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+        <div class="ctrl-field" style="flex:1;min-width:160px;margin:0"><label>Tienda</label><select id="rep-sel-store" onchange="renderReportes()"><option value="">Todas las tiendas</option></select></div>
+        <button class="btn-ghost" onclick="descargarReportesCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
+      </div>
+      <div id="rep-stats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div id="rep-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
     </div>
   </div>
 </div>
@@ -558,6 +578,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="sc-count-img"></div>
     <div class="modal-head" id="sc-count-head"></div>
     <div class="modal-body">
+      <div id="sc-count-prev-note" style="display:none;font-size:12px;color:var(--text2);background:var(--bg2);border-radius:var(--r);padding:8px 10px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:8px">
+        <span id="sc-count-prev-txt"></span>
+        <button type="button" class="link-alt" style="white-space:nowrap;margin:0" onclick="toggleAddPanel(true)"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+      <div id="sc-add-panel" style="display:none;background:var(--bg2);border-radius:var(--r);padding:10px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Cantidad extra a sumar a lo ya contado:</div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div class="mfield" style="flex:1;margin:0">
+            <label style="font-size:11px">Extra buen estado</label>
+            <input type="number" id="sc-add-input" min="0" inputmode="numeric" placeholder="0" style="text-align:center;padding:8px">
+          </div>
+          <div class="mfield" style="flex:1;margin:0">
+            <label style="font-size:11px">Extra dañado</label>
+            <input type="number" id="sc-add-danado" min="0" inputmode="numeric" placeholder="0" value="0" style="text-align:center;padding:8px">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="button" class="mbtn mbtn-cancel" style="flex:1" onclick="toggleAddPanel(false)">Cancelar</button>
+          <button type="button" class="mbtn mbtn-ok" style="flex:1" onclick="applyAddQuantity()"><i class="ti ti-plus"></i> Sumar</button>
+        </div>
+      </div>
       <div class="mfield">
         <label>Cantidad física en buen estado</label>
         <input type="number" id="sc-count-input" min="0" inputmode="numeric" placeholder="0" style="font-size:22px;font-weight:600;text-align:center;padding:12px">
@@ -613,7 +654,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwpT_3fpQcPt09JuL1CAOlbAIdJOwhFvn7ALilOVJzfwYHoJn-dmCljVOTlcXPuTVRTDg/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbztjl12oKSOAkR0v0WGsH41Y92kCMCdW3T8rDAhBTxA4KCdfLBM5L099pB6JSaCb1bFFg/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1614,10 +1655,40 @@ function openCountModal(ean){
   document.getElementById('sc-count-head').innerHTML=`<div class="modal-title">${p.nombre||'(sin nombre)'}</div><div class="modal-ean">${p.ean} · TR ${scCurrentTR}</div>`;
   document.getElementById('sc-count-input').value=c?c.cantidad_fisica:'';
   document.getElementById('sc-count-danado').value=c?(c.cantidad_danada||0):0;
+  // Si el producto ya tenía un conteo propio, se muestra (es su propio dato, no la precarga)
+  // junto con la opción de "Adicionar" para sumar cantidad extra sin tener que calcular el total a mano.
+  const prevNote=document.getElementById('sc-count-prev-note');
+  if(c){
+    const danadoTxt=c.cantidad_danada>0?` (+${c.cantidad_danada} dañado)`:'';
+    document.getElementById('sc-count-prev-txt').innerHTML=`<i class="ti ti-history"></i> Ya tenías contado: <b>${c.cantidad_fisica}</b>${danadoTxt}`;
+    prevNote.style.display='flex';
+  }else{
+    prevNote.style.display='none';
+  }
+  toggleAddPanel(false);
   document.getElementById('modal-count-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('sc-count-input').focus(),100);
 }
 function closeCountModal(e){if(e&&e.target!==document.getElementById('modal-count-overlay'))return;document.getElementById('modal-count-overlay').classList.remove('open');}
+
+function toggleAddPanel(show){
+  const panel=document.getElementById('sc-add-panel');
+  panel.style.display=show?'block':'none';
+  document.getElementById('sc-add-input').value='';
+  document.getElementById('sc-add-danado').value=0;
+  if(show)setTimeout(()=>document.getElementById('sc-add-input').focus(),100);
+}
+function applyAddQuantity(){
+  const extra=Number(document.getElementById('sc-add-input').value)||0;
+  const extraDan=Number(document.getElementById('sc-add-danado').value)||0;
+  if(extra<=0&&extraDan<=0){toast('Ingresa una cantidad extra mayor a 0');return;}
+  const base=Number(document.getElementById('sc-count-input').value)||0;
+  const baseDan=Number(document.getElementById('sc-count-danado').value)||0;
+  document.getElementById('sc-count-input').value=base+extra;
+  document.getElementById('sc-count-danado').value=baseDan+extraDan;
+  toggleAddPanel(false);
+  toast('Cantidad actualizada — revisa y guarda');
+}
 
 async function submitScanCount(){
   const val=document.getElementById('sc-count-input').value;
@@ -1668,6 +1739,71 @@ async function closeOrdenClient(){
     if(d.ok){scOrdenCerrada=true;renderScanList();toast('Orden cerrada ✓');}
     else toast('Error: '+d.error);
   }catch{toast('Sin conexión');}
+}
+
+// --- Reportes: exactitud y tiempos de cierre por tienda/TR (visible para contador y auditor) ---
+let repData=[];
+async function loadReportes(){
+  const area=document.getElementById('rep-area');
+  area.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  try{
+    const r=await fetch(getUrl()+'?action=getEscanerResumen');
+    const d=await r.json();
+    if(!d.ok){area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    repData=d.data||[];
+    const sel=document.getElementById('rep-sel-store');
+    const prev=sel.value;
+    const tiendas=[...new Set(repData.map(o=>o.tienda))].sort();
+    sel.innerHTML='<option value="">Todas las tiendas</option>'+tiendas.map(t=>`<option value="${t}">${t}</option>`).join('');
+    if(prev&&tiendas.includes(prev))sel.value=prev;
+    renderReportes();
+  }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+}
+function fmtMin(min){
+  if(min===null||min===undefined)return '—';
+  if(min<60)return `${min} min`;
+  const h=Math.floor(min/60),m=min%60;
+  return `${h}h ${m}min`;
+}
+function fmtFecha(iso){
+  if(!iso)return '—';
+  return new Date(iso).toLocaleString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function renderReportes(){
+  const tienda=document.getElementById('rep-sel-store').value;
+  const area=document.getElementById('rep-area');
+  const statsBox=document.getElementById('rep-stats');
+  let fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
+  if(!fil.length){area.innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off"></i>Sin órdenes registradas</div>';statsBox.innerHTML='';return;}
+  const cerradas=fil.filter(o=>o.cerrada);
+  const pctProm=cerradas.length?Math.round(cerradas.reduce((s,o)=>s+(o.pctExactitud||0),0)/cerradas.length):null;
+  const durs=cerradas.filter(o=>o.duracionMin!==null&&o.duracionMin!==undefined);
+  const durProm=durs.length?Math.round(durs.reduce((s,o)=>s+o.duracionMin,0)/durs.length):null;
+  statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctProm===null?'—':pctProm+'%'}</div><div class="stat-l">Exactitud prom.</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
+  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
+  fil.forEach(o=>{
+    const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
+    const pct=o.pctExactitud===null?'—':`${o.pctExactitud}%`;
+    html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  area.innerHTML=html;
+}
+function descargarReportesCSV(){
+  const tienda=document.getElementById('rep-sel-store').value;
+  const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
+  if(!fil.length){toast('No hay datos para descargar');return;}
+  const headers=['Tienda','TR','Estado','Contados','Total','% Exactitud','Diferencias','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
+  const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  const rows=fil.map(o=>[o.tienda,o.tr,o.cerrada?'Cerrada':'Abierta',o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
+  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`reporte_auditoria_${fecha}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // --- Cámara / escaneo de código de barras ---
