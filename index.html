@@ -209,6 +209,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .escaner-progress{display:flex;align-items:center;gap:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:1rem}
 .escaner-progress-bar-wrap{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
 .escaner-progress-bar{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.report-banner{display:flex;align-items:center;gap:12px;padding:14px;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);cursor:pointer;margin-bottom:1rem;transition:filter .15s}
+.report-banner:hover{filter:brightness(.97)}
+.report-banner-icon{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--amber);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+.report-banner-txt{flex:1;min-width:0}
+.report-banner-title{font-size:14px;font-weight:600;color:var(--text)}
+.report-banner-sub{font-size:11.5px;color:var(--text2);margin-top:1px}
+.chart-wrap{overflow-x:auto;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.chart-legend{display:flex;gap:16px;justify-content:center;margin-top:6px}
+.chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
+.chart-legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
 .pill-contador{background:var(--amber-bg);color:var(--amber)}
 .btn-full.audit{background:var(--amber)}
 .btn-full.audit:hover{background:#92620a}
@@ -505,13 +515,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="avatar" id="av-scanner" onclick="logoutScanner()" title="Cerrar sesión">?</div>
     </div>
     <div class="content">
+      <div class="report-banner" onclick="showScreen('scr-reportes');loadReportes()" role="button" tabindex="0">
+        <div class="report-banner-icon"><i class="ti ti-chart-bar"></i></div>
+        <div class="report-banner-txt">
+          <div class="report-banner-title">Reportes de auditoría</div>
+          <div class="report-banner-sub">Exactitud, SKUs con diferencia y avance día con día</div>
+        </div>
+        <i class="ti ti-chevron-right" style="color:var(--amber)"></i>
+      </div>
       <div class="ctrl-field" style="margin-bottom:1rem"><label>Tienda</label><select id="sc-sel-store" onchange="onScSelectStore()"><option value="">— Seleccionar tienda —</option></select></div>
       <div id="sc-tr-area"><div class="empty-state"><i class="ti ti-building-store"></i>Selecciona una tienda para ver sus TR pendientes</div></div>
     </div>
   </div>
 </div>
 
-<!-- REPORTES: exactitud y tiempos de cierre por tienda/TR (visible para contador y auditor) -->
+<!-- REPORTES: exactitud, SKUs con diferencia, tiempos de cierre y progreso diario (visible para contador y auditor) -->
 <div id="scr-reportes" class="screen">
   <div class="main-page">
     <div class="top-bar">
@@ -521,11 +539,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="content">
       <div class="controls" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
-        <div class="ctrl-field" style="flex:1;min-width:160px;margin:0"><label>Tienda</label><select id="rep-sel-store" onchange="renderReportes()"><option value="">Todas las tiendas</option></select></div>
+        <div class="ctrl-field" style="flex:1;min-width:160px;margin:0"><label>Tienda</label><select id="rep-sel-store" onchange="onRepFilterChange()"><option value="">Todas las tiendas</option></select></div>
         <button class="btn-ghost" onclick="descargarReportesCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
       </div>
       <div id="rep-stats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Progreso día con día</div>
+      <div id="rep-chart-area" class="chart-wrap" style="margin-bottom:1.2rem"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
       <div id="rep-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 8px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Impacto por categoría</div>
+        <button class="btn-ghost" onclick="descargarCategoriasCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
+      </div>
+      <div id="rep-cat-chart-area" class="chart-wrap" style="margin-bottom:1rem"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+      <div id="rep-cat-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
     </div>
   </div>
 </div>
@@ -654,7 +681,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbztjl12oKSOAkR0v0WGsH41Y92kCMCdW3T8rDAhBTxA4KCdfLBM5L099pB6JSaCb1bFFg/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbw9MeEppgKMh-eeloFXI42Hx0wA2KWrjmVuW6YNOZ-wDL0yBYuuSPSNGCiEFdG7lOzrYw/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1741,7 +1768,7 @@ async function closeOrdenClient(){
   }catch{toast('Sin conexión');}
 }
 
-// --- Reportes: exactitud y tiempos de cierre por tienda/TR (visible para contador y auditor) ---
+// --- Reportes: exactitud, SKUs con diferencia, tiempos de cierre y progreso diario (visible para contador y auditor) ---
 let repData=[];
 async function loadReportes(){
   const area=document.getElementById('rep-area');
@@ -1758,7 +1785,10 @@ async function loadReportes(){
     if(prev&&tiendas.includes(prev))sel.value=prev;
     renderReportes();
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+  loadProgresoDiario();
+  loadCategorias();
 }
+function onRepFilterChange(){renderReportes();loadProgresoDiario();loadCategorias();}
 function fmtMin(min){
   if(min===null||min===undefined)return '—';
   if(min<60)return `${min} min`;
@@ -1779,12 +1809,14 @@ function renderReportes(){
   const pctProm=cerradas.length?Math.round(cerradas.reduce((s,o)=>s+(o.pctExactitud||0),0)/cerradas.length):null;
   const durs=cerradas.filter(o=>o.duracionMin!==null&&o.duracionMin!==undefined);
   const durProm=durs.length?Math.round(durs.reduce((s,o)=>s+o.duracionMin,0)/durs.length):null;
-  statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctProm===null?'—':pctProm+'%'}</div><div class="stat-l">Exactitud prom.</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
-  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
+  const skusDif=fil.reduce((s,o)=>s+(o.diferencias||0),0);
+  statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctProm===null?'—':pctProm+'%'}</div><div class="stat-l">Exactitud prom.</div></div><div class="stat"><div class="stat-n" style="color:var(--amber)">${skusDif}</div><div class="stat-l">SKUs con diferencia</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
+  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>SKUs c/ diferencia</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
   fil.forEach(o=>{
     const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
     const pct=o.pctExactitud===null?'—':`${o.pctExactitud}%`;
-    html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
+    const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
+    html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
   });
   html+='</tbody></table></div>';
   area.innerHTML=html;
@@ -1793,7 +1825,7 @@ function descargarReportesCSV(){
   const tienda=document.getElementById('rep-sel-store').value;
   const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
   if(!fil.length){toast('No hay datos para descargar');return;}
-  const headers=['Tienda','TR','Estado','Contados','Total','% Exactitud','Diferencias','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
+  const headers=['Tienda','TR','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
   const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
   const rows=fil.map(o=>[o.tienda,o.tr,o.cerrada?'Cerrada':'Abierta',o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
   const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
@@ -1802,6 +1834,121 @@ function descargarReportesCSV(){
   const a=document.createElement('a');
   const fecha=new Date().toISOString().slice(0,10);
   a.href=url;a.download=`reporte_auditoria_${fecha}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Gráfica de barras apiladas: conteos registrados por día (verde = coincide, ámbar = con diferencia)
+async function loadProgresoDiario(){
+  const chartArea=document.getElementById('rep-chart-area');
+  chartArea.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  const tienda=document.getElementById('rep-sel-store').value;
+  try{
+    const r=await fetch(getUrl()+'?action=getProgresoDiario'+(tienda?'&tienda='+encodeURIComponent(tienda):''));
+    const d=await r.json();
+    if(!d.ok){chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    renderProgresoChart(d.data||[]);
+  }catch{chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+}
+function renderProgresoChart(data){
+  const chartArea=document.getElementById('rep-chart-area');
+  if(!data.length){chartArea.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>Aún no hay conteos registrados</div>';return;}
+  const maxVal=Math.max(1,...data.map(d=>d.total));
+  const padL=32,padR=14,padT=22,padB=34;
+  const step=Math.max(44,Math.min(64,600/data.length));
+  const plotW=step*data.length;
+  const plotH=150;
+  const w=padL+plotW+padR, h=padT+plotH+padB;
+  const bw=Math.min(30,step*0.55);
+  const baseY=padT+plotH;
+  let bars='';
+  data.forEach((dpt,i)=>{
+    const x=padL+step*i+(step-bw)/2;
+    const totalH=Math.round(plotH*(dpt.total/maxVal));
+    const difH=dpt.diferencias>0?Math.max(3,Math.round(plotH*(dpt.diferencias/maxVal))):0;
+    const okH=Math.max(dpt.total>0?1:0,totalH-difH-(difH>0?1:0));
+    const okTopY=baseY-okH;
+    const difTopY=okTopY-1-difH;
+    const partes=dpt.dia.split('-');
+    const fechaLbl=`${partes[2]}/${partes[1]}`;
+    bars+=`<g>`;
+    bars+=`<title>${dpt.dia}: ${dpt.total} contados, ${dpt.diferencias} con diferencia</title>`;
+    if(okH>0)bars+=`<rect x="${x}" y="${okTopY}" width="${bw}" height="${okH}" rx="2" fill="var(--green)"/>`;
+    if(difH>0)bars+=`<rect x="${x}" y="${difTopY}" width="${bw}" height="${difH}" rx="2" fill="var(--amber)"/>`;
+    if(dpt.total>0)bars+=`<text x="${x+bw/2}" y="${difTopY-6}" text-anchor="middle" font-size="10.5" fill="var(--text2)">${dpt.total}</text>`;
+    bars+=`<text x="${x+bw/2}" y="${baseY+16}" text-anchor="middle" font-size="10" fill="var(--text3)">${fechaLbl}</text>`;
+    bars+=`</g>`;
+  });
+  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Conteos registrados por día, verde coincide y ámbar con diferencia">
+    <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="var(--border)" stroke-width="1"/>
+    ${bars}
+  </svg>`;
+  chartArea.innerHTML=svg+`<div class="chart-legend"><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--green)"></span>Coincide</span><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--amber)"></span>Con diferencia</span></div>`;
+}
+
+// Impacto por categoría: qué categorías concentran más SKUs con diferencia.
+// Depende de que la Precarga tenga una columna "Categoria" (el usuario la llena con su propio
+// BUSCARX contra su tabla de referencia EAN->categoría) — si aún no existe, todo cae en
+// "Sin categoría" sin romper nada.
+let repCatData=[];
+async function loadCategorias(){
+  const chartArea=document.getElementById('rep-cat-chart-area');
+  const tblArea=document.getElementById('rep-cat-area');
+  chartArea.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  tblArea.innerHTML='';
+  const tienda=document.getElementById('rep-sel-store').value;
+  try{
+    const r=await fetch(getUrl()+'?action=getReporteCategorias'+(tienda?'&tienda='+encodeURIComponent(tienda):''));
+    const d=await r.json();
+    if(!d.ok){chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    repCatData=d.data||[];
+    renderCategoriasChart(repCatData);
+    renderCategoriasTable(repCatData);
+  }catch{chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+}
+function renderCategoriasChart(data){
+  const area=document.getElementById('rep-cat-chart-area');
+  if(!data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-tags"></i>Aún no hay conteos registrados</div>';return;}
+  const rows=data.slice(0,15); // top 15 por impacto (ya vienen ordenadas desde el backend)
+  const maxVal=Math.max(1,...rows.map(d=>d.diferencias));
+  const labelW=140,plotW=380,padR=46,padT=8,padB=8,rowH=28;
+  const w=labelW+plotW+padR, h=padT+rows.length*rowH+padB;
+  let bars='';
+  rows.forEach((d,i)=>{
+    const y=padT+i*rowH;
+    const barW=Math.max(2,Math.round(plotW*(d.diferencias/maxVal)));
+    const label=d.categoria.length>18?d.categoria.slice(0,17)+'…':d.categoria;
+    bars+=`<g><title>${d.categoria}: ${d.diferencias} de ${d.contados} con diferencia (${d.danados} dañados)</title>`;
+    bars+=`<text x="${labelW-8}" y="${y+rowH/2+4}" text-anchor="end" font-size="12" fill="var(--text)">${label}</text>`;
+    bars+=`<rect x="${labelW}" y="${y+5}" width="${barW}" height="${rowH-10}" rx="3" fill="var(--amber)"/>`;
+    bars+=`<text x="${labelW+barW+8}" y="${y+rowH/2+4}" font-size="12" fill="var(--text2)">${d.diferencias}</text>`;
+    bars+=`</g>`;
+  });
+  area.innerHTML=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Categorías ordenadas por número de SKUs con diferencia">${bars}</svg>`;
+}
+function renderCategoriasTable(data){
+  const area=document.getElementById('rep-cat-area');
+  if(!data.length){area.innerHTML='';return;}
+  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Categoría</th><th>Contados</th><th>% Exactitud</th><th>SKUs c/ diferencia</th><th>Piezas dañadas</th></tr></thead><tbody>';
+  data.forEach(d=>{
+    const pct=d.pctExactitud===null?'—':`${d.pctExactitud}%`;
+    const dif=d.diferencias>0?`<span style="color:var(--amber);font-weight:600">${d.diferencias}</span>`:'—';
+    html+=`<tr><td>${d.categoria}</td><td>${d.contados}</td><td>${pct}</td><td>${dif}</td><td>${d.danados||0}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  area.innerHTML=html;
+}
+function descargarCategoriasCSV(){
+  if(!repCatData.length){toast('No hay datos para descargar');return;}
+  const headers=['Categoría','Contados','% Exactitud','SKUs con diferencia','Piezas dañadas'];
+  const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  const rows=repCatData.map(d=>[d.categoria,d.contados,d.pctExactitud===null?'':d.pctExactitud,d.diferencias,d.danados||0]);
+  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`reporte_categorias_${fecha}.csv`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
