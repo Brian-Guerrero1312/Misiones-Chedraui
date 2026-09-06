@@ -196,6 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tr-card-info{flex:1;min-width:0}
 .tr-card-tr{font-size:14px;font-weight:600}
 .tr-card-tienda{font-size:12px;color:var(--text2);margin-top:1px}
+.tr-card-fecha{font-size:11px;color:var(--text3);margin-top:1px}
 .tr-card-bar-wrap{width:100%;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-top:6px}
 .tr-card-bar{height:100%;background:var(--green);border-radius:3px}
 .tr-card-pct{font-size:13px;font-weight:600;color:var(--text2);min-width:60px;text-align:right}
@@ -699,7 +700,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyTin7OhLH2x4SeTtt4VqeLm-Bifc8IlRek0HwwB0hgaEZJjy0jbaR60-VMkQkpyxH8zw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxb1xY-vBJrBxfkVRVj5I6abPHtKu13EammwThl-bTW_iIoGLOresZ6bZYK-k0druE2QA/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1595,15 +1596,24 @@ function renderTRList(){
   let html='<div class="tr-list">';
   list.forEach(o=>{
     const pct=o.total?Math.round(o.contados/o.total*100):0;
-    html+=`<div class="tr-card${o.cerrada?' cerrada':''}" onclick="openTR('${o.tr}','${tienda}')"><div class="tr-card-info"><div class="tr-card-tr">TR ${o.tr} ${o.cerrada?'<i class="ti ti-lock" style="font-size:12px;color:var(--text3)"></i>':''}</div><div class="tr-card-tienda">${o.contados}/${o.total} contados</div><div class="tr-card-bar-wrap"><div class="tr-card-bar" style="width:${pct}%"></div></div></div><div class="tr-card-pct">${pct}%</div></div>`;
+    const label=o.sapId?o.sapId:('TR '+o.tr);
+    const fechaLinea=o.fechaCarga?`<div class="tr-card-fecha">Cargado: ${fmtFechaCorta(o.fechaCarga)}</div>`:'';
+    html+=`<div class="tr-card${o.cerrada?' cerrada':''}" onclick="openTR('${o.tr}','${tienda}')"><div class="tr-card-info"><div class="tr-card-tr">${label} ${o.cerrada?'<i class="ti ti-lock" style="font-size:12px;color:var(--text3)"></i>':''}</div>${fechaLinea}<div class="tr-card-tienda">${o.contados}/${o.total} contados</div><div class="tr-card-bar-wrap"><div class="tr-card-bar" style="width:${pct}%"></div></div></div><div class="tr-card-pct">${pct}%</div></div>`;
   });
   html+='</div>';
   area.innerHTML=html;
 }
+function fmtFechaCorta(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'});
+}
 
 async function openTR(tr,tienda){
   scCurrentTR=tr;scCurrentTienda=tienda;
-  document.getElementById('sc-work-title').textContent=`TR ${tr} · ${tienda}`;
+  const ordenInfo=(scTiendaMap[tienda]||[]).find(x=>x.tr===tr);
+  const tituloLabel=ordenInfo&&ordenInfo.sapId?ordenInfo.sapId:('TR '+tr);
+  document.getElementById('sc-work-title').textContent=`${tituloLabel} · ${tienda}`;
   showScreen('scr-scanner-work');
   document.getElementById('sc-product-area').innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
   await loadOrden(true);
@@ -1834,7 +1844,7 @@ function renderReportes(){
     const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
     const pct=o.pctExactitud===null?'—':`${o.pctExactitud}%`;
     const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
-    html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
+    html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
   });
   html+='</tbody></table></div>';
   area.innerHTML=html;
@@ -1843,9 +1853,9 @@ function descargarReportesCSV(){
   const tienda=document.getElementById('rep-sel-store').value;
   const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
   if(!fil.length){toast('No hay datos para descargar');return;}
-  const headers=['Tienda','TR','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
+  const headers=['Tienda','TR','SAP ID','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
   const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
-  const rows=fil.map(o=>[o.tienda,o.tr,o.cerrada?'Cerrada':(o.vencida?'Vencida':'Abierta'),o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
+  const rows=fil.map(o=>[o.tienda,o.tr,o.sapId||'',o.cerrada?'Cerrada':(o.vencida?'Vencida':'Abierta'),o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
   const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -2088,7 +2098,7 @@ async function loadEscanerResumen(){
       const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
       const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
       const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
-      html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
+      html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
     });
     html+='</tbody></table></div>';area.innerHTML=html;
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error</div>';}
