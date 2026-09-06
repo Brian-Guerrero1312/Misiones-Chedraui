@@ -146,6 +146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pill-admin{background:var(--blue-bg);color:var(--blue)}
 .pill-exec{background:var(--green-bg);color:var(--green-dk)}
 .pill-pend{background:var(--bg2);color:var(--text2);border:0.5px solid var(--border)}
+.pill-vencida{background:var(--bg2);color:var(--text3);border:0.5px dashed var(--border2)}
 .btn-sm{padding:5px 10px;border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text);transition:all .15s;white-space:nowrap}
 .btn-sm:hover{background:var(--bg2)}
 .btn-sm.ok{background:var(--green);color:#fff;border-color:var(--green)}
@@ -698,7 +699,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzisO4xWSkIWsYL79H6TDk4lftBaz_O79fUvNvy9x2scXSKgulSIAR_tDbyD18vwU6NQw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyTin7OhLH2x4SeTtt4VqeLm-Bifc8IlRek0HwwB0hgaEZJjy0jbaR60-VMkQkpyxH8zw/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1830,7 +1831,7 @@ function renderReportes(){
   statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctProm===null?'—':pctProm+'%'}</div><div class="stat-l">Exactitud prom.</div></div><div class="stat"><div class="stat-n" style="color:var(--amber)">${skusDif}</div><div class="stat-l">SKUs con diferencia</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
   let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>SKUs c/ diferencia</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
   fil.forEach(o=>{
-    const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
+    const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
     const pct=o.pctExactitud===null?'—':`${o.pctExactitud}%`;
     const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
     html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
@@ -1844,7 +1845,7 @@ function descargarReportesCSV(){
   if(!fil.length){toast('No hay datos para descargar');return;}
   const headers=['Tienda','TR','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
   const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
-  const rows=fil.map(o=>[o.tienda,o.tr,o.cerrada?'Cerrada':'Abierta',o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
+  const rows=fil.map(o=>[o.tienda,o.tr,o.cerrada?'Cerrada':(o.vencida?'Vencida':'Abierta'),o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
   const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -2084,7 +2085,7 @@ async function loadEscanerResumen(){
     let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Diferencias</th><th>Estado</th><th></th></tr></thead><tbody>';
     d.data.forEach(o=>{
       const pct=o.total?Math.round(o.contados/o.total*100):0;
-      const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:`<span class="pill pill-pend">Abierta</span>`;
+      const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
       const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
       const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
       html+=`<tr><td>${o.tienda}</td><td><strong>${o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
