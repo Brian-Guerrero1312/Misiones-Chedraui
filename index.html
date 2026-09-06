@@ -223,6 +223,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .rep-section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
 .rep-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:1.2rem}
 .chart-card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.chart-card-sub{font-size:10.5px;color:var(--text3);margin:-3px 0 6px;opacity:.85}
 #scr-reportes{--bg:#141a24;--bg2:#1b2330;--bg3:#0a0e16;--text:#f3f5f8;--text2:#93a0b4;--text3:#5f6b7d;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);--green:#35d399;--green-bg:rgba(53,211,153,.14);--green-dk:#24b184;--amber:#ef4b24;--amber-bg:rgba(239,75,36,.14);--amber-b:#c23c1b;color:var(--text)}
 .chart-legend{display:flex;gap:16px;justify-content:center;margin-top:6px}
 .chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
@@ -433,10 +434,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <!-- TAB ESCÁNER -->
       <div id="tab-escaner" class="admin-section">
         <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">Progreso de las órdenes de conteo con escáner, agrupadas por TR (transferencia/traspaso). La precarga se administra desde la pestaña "Precarga" del Google Sheet, con las mismas columnas que "Productos" más TR y Cantidad: TR, Tienda, WH_id, EAN, Nombre, Imagen (URL), Cantidad.</p>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:1rem">
-          <button class="btn-ghost" onclick="recalcularContraPrecarga()" title="Si corregiste cantidades en Precarga después de que ya contaron, esto vuelve a comparar los conteos guardados contra la Precarga actual"><i class="ti ti-refresh-alert"></i> Recalcular contra Precarga</button>
-          <button class="btn-ghost" onclick="loadEscanerResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+          <div class="ctrl-field" style="flex:1;min-width:160px;margin:0"><label>Tienda</label><select id="esc-sel-store" onchange="renderEscanerResumen()"><option value="">Todas las tiendas</option></select></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost" onclick="recalcularContraPrecarga()" title="Si corregiste cantidades en Precarga después de que ya contaron, esto vuelve a comparar los conteos guardados contra la Precarga actual"><i class="ti ti-refresh-alert"></i> Recalcular contra Precarga</button>
+            <button class="btn-ghost" onclick="loadEscanerResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
+          </div>
         </div>
+        <div class="rep-section-title" style="margin-bottom:8px">Avance por TR</div>
         <div id="escaner-resumen-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
       </div>
     </div>
@@ -558,20 +563,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="rep-chart-grid">
         <div>
           <div class="chart-card-title">Progreso día con día</div>
+          <div class="chart-card-sub">Piezas contadas por día — el número de arriba es el total; el tramo ámbar es cuántas de esas tuvieron diferencia</div>
           <div id="rep-chart-area" class="chart-wrap"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
         </div>
         <div>
           <div class="chart-card-title">% Exactitud por día</div>
+          <div class="chart-card-sub">De lo contado cada día, qué porcentaje coincidió con la precarga</div>
           <div id="rep-acc-chart-area" class="chart-wrap"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
         </div>
       </div>
+      <div class="chart-card-title">Detalle de órdenes por TR</div>
       <div id="rep-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
 
       <div class="rep-section-head" style="justify-content:space-between;margin-top:22px">
         <div style="display:flex;align-items:center;gap:8px"><span class="rep-badge">3</span><span class="rep-section-title">Impacto por categoría</span></div>
         <button class="btn-ghost" onclick="descargarCategoriasCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
       </div>
+      <div class="chart-card-title">SKUs con diferencia por categoría</div>
       <div id="rep-cat-chart-area" class="chart-wrap" style="margin-bottom:1rem"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+      <div class="chart-card-title">Detalle por categoría</div>
       <div id="rep-cat-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
     </div>
   </div>
@@ -701,7 +711,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxRXmWrXG8prPIPbrjO9XVM91fXG7LsyFvyF1thDq9LBTdaotue4xnR2i8F2B6NURMnkQ/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzx3PiP7t65kw_KZ59p3IUe9dMlpb03p75-cNob_-tEv085wO4YGkqyNxzhoLSJXOTT4Q/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1832,8 +1842,8 @@ function renderReportes(){
   const tienda=document.getElementById('rep-sel-store').value;
   const area=document.getElementById('rep-area');
   const statsBox=document.getElementById('rep-stats');
-  let fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
-  if(!fil.length){area.innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off"></i>Sin órdenes registradas</div>';statsBox.innerHTML='';return;}
+  let fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).filter(o=>o.contados>0).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
+  if(!fil.length){area.innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off"></i>Sin órdenes con conteos registrados</div>';statsBox.innerHTML='';return;}
   const cerradas=fil.filter(o=>o.cerrada);
   const pctProm=cerradas.length?Math.round(cerradas.reduce((s,o)=>s+(o.pctExactitud||0),0)/cerradas.length):null;
   const durs=cerradas.filter(o=>o.duracionMin!==null&&o.duracionMin!==undefined);
@@ -1852,7 +1862,7 @@ function renderReportes(){
 }
 function descargarReportesCSV(){
   const tienda=document.getElementById('rep-sel-store').value;
-  const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
+  const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).filter(o=>o.contados>0).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
   if(!fil.length){toast('No hay datos para descargar');return;}
   const headers=['Tienda','TR','SAP ID','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
   const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
@@ -1907,11 +1917,14 @@ function renderProgresoChart(data){
     bars+=`<title>${dpt.dia}: ${dpt.total} contados, ${dpt.diferencias} con diferencia</title>`;
     if(okH>0)bars+=`<rect x="${x}" y="${okTopY}" width="${bw}" height="${okH}" rx="2" fill="var(--green)"/>`;
     if(difH>0)bars+=`<rect x="${x}" y="${difTopY}" width="${bw}" height="${difH}" rx="2" fill="var(--amber)"/>`;
-    if(dpt.total>0)bars+=`<text x="${x+bw/2}" y="${difTopY-6}" text-anchor="middle" font-size="10.5" fill="var(--text2)">${dpt.total}</text>`;
+    if(dpt.total>0){
+      const labelTotal=dpt.diferencias>0?`${dpt.total} <tspan fill="var(--amber)" font-weight="600">(${dpt.diferencias})</tspan>`:`${dpt.total}`;
+      bars+=`<text x="${x+bw/2}" y="${difTopY-6}" text-anchor="middle" font-size="10.5" fill="var(--text2)">${labelTotal}</text>`;
+    }
     bars+=`<text x="${x+bw/2}" y="${baseY+16}" text-anchor="middle" font-size="10" fill="var(--text3)">${fechaLbl}</text>`;
     bars+=`</g>`;
   });
-  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Conteos registrados por día, verde coincide y ámbar con diferencia">
+  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;width:${w}px" role="img" aria-label="Conteos registrados por día, verde coincide y ámbar con diferencia">
     <line x1="${padL}" y1="${baseY}" x2="${padL+plotW}" y2="${baseY}" stroke="var(--border)" stroke-width="1"/>
     ${bars}
   </svg>`;
@@ -1948,7 +1961,7 @@ function renderAccChart(data){
       marks+=`<text x="${p.x}" y="${p.y-8}" text-anchor="middle" font-size="10" fill="var(--text2)">${p.pct}%</text>`;
     }
   });
-  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Porcentaje de exactitud por día">
+  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;width:${w}px" role="img" aria-label="Porcentaje de exactitud por día">
     ${gridY}
     <polyline points="${polyline}" fill="none" stroke="var(--green)" stroke-width="2"/>
     ${marks}
@@ -1994,7 +2007,7 @@ function renderCategoriasChart(data){
     bars+=`<text x="${labelW+barW+8}" y="${y+rowH/2+4}" font-size="12" fill="var(--text2)">${d.diferencias}</text>`;
     bars+=`</g>`;
   });
-  area.innerHTML=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Categorías ordenadas por número de SKUs con diferencia">${bars}</svg>`;
+  area.innerHTML=`<svg viewBox="0 0 ${w} ${h}" style="display:block;width:${w}px" role="img" aria-label="Categorías ordenadas por número de SKUs con diferencia">${bars}</svg>`;
 }
 function renderCategoriasTable(data){
   const area=document.getElementById('rep-cat-area');
@@ -2087,22 +2100,36 @@ function onScanDecoded(decodedText){
 }
 
 // --- Resumen de escáner en Admin ---
+let escResumenData=[];
 async function loadEscanerResumen(){
   const area=document.getElementById('escaner-resumen-area');
   area.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
   try{
     const r=await fetch(getUrl()+'?action=getEscanerResumen');const d=await r.json();
-    if(!d.ok||!d.data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-barcode"></i>Sin precarga registrada aún</div>';return;}
-    let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Diferencias</th><th>Estado</th><th></th></tr></thead><tbody>';
-    d.data.forEach(o=>{
-      const pct=o.total?Math.round(o.contados/o.total*100):0;
-      const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
-      const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
-      const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
-      html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
-    });
-    html+='</tbody></table></div>';area.innerHTML=html;
+    if(!d.ok){area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    escResumenData=d.data||[];
+    const sel=document.getElementById('esc-sel-store');
+    const prev=sel.value;
+    const tiendas=[...new Set(escResumenData.map(o=>o.tienda))].sort();
+    sel.innerHTML='<option value="">Todas las tiendas</option>'+tiendas.map(t=>`<option value="${t}">${t}</option>`).join('');
+    if(prev&&tiendas.includes(prev))sel.value=prev;
+    renderEscanerResumen();
   }catch{area.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Error</div>';}
+}
+function renderEscanerResumen(){
+  const area=document.getElementById('escaner-resumen-area');
+  const tienda=document.getElementById('esc-sel-store').value;
+  const fil=tienda?escResumenData.filter(o=>o.tienda===tienda):escResumenData;
+  if(!fil.length){area.innerHTML='<div class="empty-state"><i class="ti ti-barcode"></i>Sin precarga registrada aún</div>';return;}
+  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Avance</th><th>Diferencias</th><th>Estado</th><th></th></tr></thead><tbody>';
+  fil.forEach(o=>{
+    const pct=o.total?Math.round(o.contados/o.total*100):0;
+    const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
+    const reopenBtn=o.cerrada?`<button class="btn-sm blue" onclick="reopenOrdenAdmin('${o.tr}')">Reabrir</button>`:'';
+    const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
+    html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${o.contados}/${o.total} (${pct}%)</td><td>${dif}</td><td>${estado}</td><td>${reopenBtn}</td></tr>`;
+  });
+  html+='</tbody></table></div>';area.innerHTML=html;
 }
 async function reopenOrdenAdmin(tr){
   if(!confirm(`¿Reabrir la orden del TR ${tr}?`))return;
