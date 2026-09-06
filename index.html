@@ -711,7 +711,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzu2X8Drm2j5Kkz4z6xnwTNEE2PaK24ve_oeXWSGi9WXHtiD8cDWRlQH6iZMNJ_X8w8Yg/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbw2U7UuFp3bN2MUSDie9U330ZdMwyia9sT1Z7Qd33BHzXlLLYNPlqE0qZO2-1Am0nYWrg/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
