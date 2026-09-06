@@ -433,7 +433,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <!-- TAB ESCÁNER -->
       <div id="tab-escaner" class="admin-section">
         <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">Progreso de las órdenes de conteo con escáner, agrupadas por TR (transferencia/traspaso). La precarga se administra desde la pestaña "Precarga" del Google Sheet, con las mismas columnas que "Productos" más TR y Cantidad: TR, Tienda, WH_id, EAN, Nombre, Imagen (URL), Cantidad.</p>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:1rem">
+          <button class="btn-ghost" onclick="recalcularContraPrecarga()" title="Si corregiste cantidades en Precarga después de que ya contaron, esto vuelve a comparar los conteos guardados contra la Precarga actual"><i class="ti ti-refresh-alert"></i> Recalcular contra Precarga</button>
           <button class="btn-ghost" onclick="loadEscanerResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
         </div>
         <div id="escaner-resumen-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
@@ -700,7 +701,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxb1xY-vBJrBxfkVRVj5I6abPHtKu13EammwThl-bTW_iIoGLOresZ6bZYK-k0druE2QA/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxRXmWrXG8prPIPbrjO9XVM91fXG7LsyFvyF1thDq9LBTdaotue4xnR2i8F2B6NURMnkQ/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -2106,6 +2107,18 @@ async function loadEscanerResumen(){
 async function reopenOrdenAdmin(tr){
   if(!confirm(`¿Reabrir la orden del TR ${tr}?`))return;
   await postAction({action:'reopenOrden',tr});toast('Orden reabierta ✓');loadEscanerResumen();
+}
+async function recalcularContraPrecarga(){
+  if(!confirm('Esto vuelve a comparar cada conteo ya guardado contra la Precarga actual y corrige la cantidad precargada y el estado de coincidencia si cambiaron (por ejemplo, si corregiste cantidades que faltaban). No toca lo que la gente contó físicamente. ¿Continuar?'))return;
+  toast('Recalculando...');
+  try{
+    const params=new URLSearchParams({action:'recalcularContraPrecarga'});
+    const r=await fetch(getUrl(),{method:'POST',body:params});
+    const d=await r.json();
+    if(!d.ok){toast(d.error||'Error al recalcular');return;}
+    toast(`Listo: ${d.actualizados} conteo(s) corregido(s) de ${d.revisados} revisados${d.sinPrecarga?` (${d.sinPrecarga} sin precarga)`:''}`);
+    loadEscanerResumen();
+  }catch{toast('Sin conexión');}
 }
 
 // ============================================================
