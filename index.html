@@ -216,6 +216,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .report-banner-title{font-size:14px;font-weight:600;color:var(--text)}
 .report-banner-sub{font-size:11.5px;color:var(--text2);margin-top:1px}
 .chart-wrap{overflow-x:auto;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.rep-section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rep-badge{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--amber);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.rep-section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.rep-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:1.2rem}
+.chart-card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+#scr-reportes{--bg:#141a24;--bg2:#1b2330;--bg3:#0a0e16;--text:#f3f5f8;--text2:#93a0b4;--text3:#5f6b7d;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);--green:#35d399;--green-bg:rgba(53,211,153,.14);--green-dk:#24b184;--amber:#ef4b24;--amber-bg:rgba(239,75,36,.14);--amber-b:#c23c1b;color:var(--text)}
 .chart-legend{display:flex;gap:16px;justify-content:center;margin-top:6px}
 .chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
 .chart-legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
@@ -542,13 +548,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="ctrl-field" style="flex:1;min-width:160px;margin:0"><label>Tienda</label><select id="rep-sel-store" onchange="onRepFilterChange()"><option value="">Todas las tiendas</option></select></div>
         <button class="btn-ghost" onclick="descargarReportesCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
       </div>
-      <div id="rep-stats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
-      <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Progreso día con día</div>
-      <div id="rep-chart-area" class="chart-wrap" style="margin-bottom:1.2rem"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+      <div class="rep-section-head"><span class="rep-badge">1</span><span class="rep-section-title">Resumen</span></div>
+      <div id="rep-stats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px"></div>
+
+      <div class="rep-section-head"><span class="rep-badge">2</span><span class="rep-section-title">Históricos</span></div>
+      <div class="rep-chart-grid">
+        <div>
+          <div class="chart-card-title">Progreso día con día</div>
+          <div id="rep-chart-area" class="chart-wrap"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+        </div>
+        <div>
+          <div class="chart-card-title">% Exactitud por día</div>
+          <div id="rep-acc-chart-area" class="chart-wrap"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
+        </div>
+      </div>
       <div id="rep-area"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 8px">
-        <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Impacto por categoría</div>
+      <div class="rep-section-head" style="justify-content:space-between;margin-top:22px">
+        <div style="display:flex;align-items:center;gap:8px"><span class="rep-badge">3</span><span class="rep-section-title">Impacto por categoría</span></div>
         <button class="btn-ghost" onclick="descargarCategoriasCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
       </div>
       <div id="rep-cat-chart-area" class="chart-wrap" style="margin-bottom:1rem"><div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div></div>
@@ -681,7 +698,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbw9MeEppgKMh-eeloFXI42Hx0wA2KWrjmVuW6YNOZ-wDL0yBYuuSPSNGCiEFdG7lOzrYw/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzisO4xWSkIWsYL79H6TDk4lftBaz_O79fUvNvy9x2scXSKgulSIAR_tDbyD18vwU6NQw/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1841,14 +1858,17 @@ function descargarReportesCSV(){
 // Gráfica de barras apiladas: conteos registrados por día (verde = coincide, ámbar = con diferencia)
 async function loadProgresoDiario(){
   const chartArea=document.getElementById('rep-chart-area');
+  const accArea=document.getElementById('rep-acc-chart-area');
   chartArea.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
+  accArea.innerHTML='<div class="empty-state"><i class="ti ti-loader-2 spin"></i>Cargando...</div>';
   const tienda=document.getElementById('rep-sel-store').value;
   try{
     const r=await fetch(getUrl()+'?action=getProgresoDiario'+(tienda?'&tienda='+encodeURIComponent(tienda):''));
     const d=await r.json();
-    if(!d.ok){chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';return;}
+    if(!d.ok){const msg='<div class="empty-state"><i class="ti ti-alert-circle"></i>'+(d.error||'Error al cargar')+'</div>';chartArea.innerHTML=msg;accArea.innerHTML=msg;return;}
     renderProgresoChart(d.data||[]);
-  }catch{chartArea.innerHTML='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';}
+    renderAccChart(d.data||[]);
+  }catch{const msg='<div class="empty-state"><i class="ti ti-alert-circle"></i>Sin conexión</div>';chartArea.innerHTML=msg;accArea.innerHTML=msg;}
 }
 function renderProgresoChart(data){
   const chartArea=document.getElementById('rep-chart-area');
@@ -1884,6 +1904,44 @@ function renderProgresoChart(data){
     ${bars}
   </svg>`;
   chartArea.innerHTML=svg+`<div class="chart-legend"><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--green)"></span>Coincide</span><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--amber)"></span>Con diferencia</span></div>`;
+}
+
+// Gráfica de línea: % de exactitud por día (derivada de los mismos datos de progreso diario, sin llamada extra al backend)
+function renderAccChart(data){
+  const area=document.getElementById('rep-acc-chart-area');
+  if(!data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-chart-line"></i>Aún no hay conteos registrados</div>';return;}
+  const padL=30,padR=14,padT=18,padB=34;
+  const step=Math.max(44,Math.min(64,600/data.length));
+  const plotW=step*Math.max(1,data.length-1);
+  const plotH=120;
+  const w=padL+Math.max(plotW,40)+padR, h=padT+plotH+padB;
+  const pts=data.map((dpt,i)=>{
+    const pct=dpt.total>0?Math.round((dpt.total-dpt.diferencias)/dpt.total*100):null;
+    const x=padL+step*i;
+    const y=pct===null?null:padT+plotH-Math.round(plotH*(pct/100));
+    return {x,y,pct,dia:dpt.dia};
+  });
+  const polyline=pts.filter(p=>p.y!==null).map(p=>`${p.x},${p.y}`).join(' ');
+  let gridY=[0,50,100].map(v=>{
+    const y=padT+plotH-Math.round(plotH*(v/100));
+    return `<line x1="${padL}" y1="${y}" x2="${padL+plotW}" y2="${y}" stroke="var(--border)" stroke-width="1" stroke-dasharray="${v===0?'0':'2,3'}"/><text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--text3)">${v}</text>`;
+  }).join('');
+  let marks='';
+  pts.forEach(p=>{
+    const partes=p.dia.split('-');
+    const fechaLbl=`${partes[2]}/${partes[1]}`;
+    marks+=`<text x="${p.x}" y="${padT+plotH+16}" text-anchor="middle" font-size="10" fill="var(--text3)">${fechaLbl}</text>`;
+    if(p.y!==null){
+      marks+=`<g><title>${p.dia}: ${p.pct}% exactitud</title><circle cx="${p.x}" cy="${p.y}" r="3.5" fill="var(--green)"/></g>`;
+      marks+=`<text x="${p.x}" y="${p.y-8}" text-anchor="middle" font-size="10" fill="var(--text2)">${p.pct}%</text>`;
+    }
+  });
+  const svg=`<svg viewBox="0 0 ${w} ${h}" style="display:block;min-width:${w}px" role="img" aria-label="Porcentaje de exactitud por día">
+    ${gridY}
+    <polyline points="${polyline}" fill="none" stroke="var(--green)" stroke-width="2"/>
+    ${marks}
+  </svg>`;
+  area.innerHTML=svg;
 }
 
 // Impacto por categoría: qué categorías concentran más SKUs con diferencia.
