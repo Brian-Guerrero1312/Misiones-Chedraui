@@ -224,7 +224,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .rep-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:1.2rem}
 .chart-card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
 .chart-card-sub{font-size:10.5px;color:var(--text3);margin:-3px 0 6px;opacity:.85}
-#scr-reportes{--bg:#141a24;--bg2:#1b2330;--bg3:#0a0e16;--text:#f3f5f8;--text2:#93a0b4;--text3:#5f6b7d;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);--green:#35d399;--green-bg:rgba(53,211,153,.14);--green-dk:#24b184;--amber:#ef4b24;--amber-bg:rgba(239,75,36,.14);--amber-b:#c23c1b;color:var(--text)}
+#scr-reportes{--bg:#141a24;--bg2:#1b2330;--bg3:#0a0e16;--text:#f3f5f8;--text2:#93a0b4;--text3:#5f6b7d;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);--green:#35d399;--green-bg:rgba(53,211,153,.14);--green-dk:#24b184;--amber:#ef4b24;--amber-bg:rgba(239,75,36,.14);--amber-b:#c23c1b;--blue:#4f9cf9;--blue-bg:rgba(79,156,249,.14);--red:#ff5c72;--red-bg:rgba(255,92,114,.14);color:var(--text)}
 .chart-legend{display:flex;gap:16px;justify-content:center;margin-top:6px}
 .chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
 .chart-legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
@@ -557,6 +557,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="btn-ghost" onclick="descargarReportesCSV()"><i class="ti ti-download"></i> Descargar CSV</button>
       </div>
       <div class="rep-section-head"><span class="rep-badge">1</span><span class="rep-section-title">Resumen</span></div>
+      <div class="chart-card-sub" style="margin-bottom:8px">"Exactitud (cerradas)" solo considera órdenes ya cerradas; "Exactitud (contado)" incluye todo lo contado hasta ahora, esté cerrado o no. Sobrantes = se contó de más; faltantes = se contó de menos</div>
       <div id="rep-stats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px"></div>
 
       <div class="rep-section-head"><span class="rep-badge">2</span><span class="rep-section-title">Históricos</span></div>
@@ -711,7 +712,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const K_SESSION='wms_session',K_COUNTS='wms_counts',K_CONFIG='wms_config';
 const K_SESSION_SC='wms_session_scanner';
 const MODO=new URLSearchParams(location.search).get('modulo')==='escaner'?'escaner':'main';
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyrWIa-BckufFbhHWafCFat7mCo2LU7GmTCa5PnSdJBQmPYUfdqfS6JCkcI2AkbeplCvg/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzyIeOSwSvY7Occabb841mIlEHhPhSIpF07BQ-TFRZBC9o_678tGngbHHeequlPmkxzRQ/exec';
 let session=null,storeData={},counts={},curProd=null,closedStores={},activeFilter='all',syncInterval=null,lastSync=null;
 let scSession=null,scTiendaMap={},scPrecarga=[],scConteos={},scOrdenCerrada=false,scCurrentTR=null,scCurrentTienda=null,scFilter='all',scSyncInterval=null;
 function goToScannerModule(){showScreen('scr-login-scanner');}
@@ -1845,17 +1846,25 @@ function renderReportes(){
   let fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).filter(o=>o.contados>0).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
   if(!fil.length){area.innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off"></i>Sin órdenes con conteos registrados</div>';statsBox.innerHTML='';return;}
   const cerradas=fil.filter(o=>o.cerrada);
-  const pctProm=cerradas.length?Math.round(cerradas.reduce((s,o)=>s+(o.pctExactitud||0),0)/cerradas.length):null;
+  // Dos lecturas de exactitud: una solo sobre lo que ya se cerró (avance "terminado"),
+  // y otra sobre todo lo contado hasta ahora, esté cerrado o no (avance "en vivo").
+  const pctPromCerradas=cerradas.length?Math.round(cerradas.reduce((s,o)=>s+(o.pctExactitud||0),0)/cerradas.length):null;
+  const pctPromContado=fil.length?Math.round(fil.reduce((s,o)=>s+(o.pctExactitud||0),0)/fil.length):null;
   const durs=cerradas.filter(o=>o.duracionMin!==null&&o.duracionMin!==undefined);
   const durProm=durs.length?Math.round(durs.reduce((s,o)=>s+o.duracionMin,0)/durs.length):null;
   const skusDif=fil.reduce((s,o)=>s+(o.diferencias||0),0);
-  statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctProm===null?'—':pctProm+'%'}</div><div class="stat-l">Exactitud prom.</div></div><div class="stat"><div class="stat-n" style="color:var(--amber)">${skusDif}</div><div class="stat-l">SKUs con diferencia</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
-  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>SKUs c/ diferencia</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
+  const sobrantes=fil.reduce((s,o)=>s+(o.sobrantes||0),0);
+  const faltantes=fil.reduce((s,o)=>s+(o.faltantes||0),0);
+  const ordenesConDif=fil.filter(o=>o.diferencias>0).length;
+  statsBox.innerHTML=`<div class="stat"><div class="stat-n">${fil.length}</div><div class="stat-l">Órdenes</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${cerradas.length}</div><div class="stat-l">Cerradas</div></div><div class="stat"><div class="stat-n">${pctPromCerradas===null?'—':pctPromCerradas+'%'}</div><div class="stat-l">Exactitud (cerradas)</div></div><div class="stat"><div class="stat-n">${pctPromContado===null?'—':pctPromContado+'%'}</div><div class="stat-l">Exactitud (contado)</div></div><div class="stat"><div class="stat-n" style="color:var(--amber)">${skusDif}</div><div class="stat-l">SKUs con diferencia</div></div><div class="stat"><div class="stat-n" style="color:var(--amber)">${ordenesConDif}</div><div class="stat-l">Órdenes con diferencia</div></div><div class="stat"><div class="stat-n" style="color:var(--blue)">${sobrantes}</div><div class="stat-l">Sobrantes</div></div><div class="stat"><div class="stat-n" style="color:var(--red)">${faltantes}</div><div class="stat-l">Faltantes</div></div><div class="stat"><div class="stat-n">${durProm===null?'—':fmtMin(durProm)}</div><div class="stat-l">Cierre prom.</div></div>`;
+  let html='<div style="overflow-x:auto"><table class="users-table"><thead><tr><th>Tienda</th><th>TR</th><th>Estado</th><th>Avance</th><th>% Exactitud</th><th>SKUs c/ diferencia</th><th>Sobrantes</th><th>Faltantes</th><th>Cerrada el</th><th>Tiempo de cierre</th></tr></thead><tbody>';
   fil.forEach(o=>{
     const estado=o.cerrada?`<span class="pill pill-exec">Cerrada</span>`:(o.vencida?`<span class="pill pill-vencida">Vencida</span>`:`<span class="pill pill-pend">Abierta</span>`);
     const pct=o.pctExactitud===null?'—':`${o.pctExactitud}%`;
     const dif=o.diferencias>0?`<span style="color:var(--amber);font-weight:600">${o.diferencias}</span>`:'—';
-    html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
+    const sob=o.sobrantes>0?`<span style="color:var(--blue);font-weight:600">${o.sobrantes}</span>`:'—';
+    const falt=o.faltantes>0?`<span style="color:var(--red);font-weight:600">${o.faltantes}</span>`:'—';
+    html+=`<tr><td>${o.tienda}</td><td><strong>${o.sapId||o.tr}</strong></td><td>${estado}</td><td>${o.contados}/${o.total}</td><td>${pct}</td><td>${dif}</td><td>${sob}</td><td>${falt}</td><td>${fmtFecha(o.fechaCierre)}</td><td>${fmtMin(o.duracionMin)}</td></tr>`;
   });
   html+='</tbody></table></div>';
   area.innerHTML=html;
@@ -1864,9 +1873,9 @@ function descargarReportesCSV(){
   const tienda=document.getElementById('rep-sel-store').value;
   const fil=(tienda?repData.filter(o=>o.tienda===tienda):repData.slice()).filter(o=>o.contados>0).sort((a,b)=>a.tienda.localeCompare(b.tienda)||a.tr.localeCompare(b.tr));
   if(!fil.length){toast('No hay datos para descargar');return;}
-  const headers=['Tienda','TR','SAP ID','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
+  const headers=['Tienda','TR','SAP ID','Estado','Contados','Total','% Exactitud','SKUs con diferencia','Sobrantes','Faltantes','Cerrada el','Cerrado por','Tiempo de cierre (min)'];
   const csvEsc=v=>{const s=String(v===null||v===undefined?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
-  const rows=fil.map(o=>[o.tienda,o.tr,o.sapId||'',o.cerrada?'Cerrada':(o.vencida?'Vencida':'Abierta'),o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
+  const rows=fil.map(o=>[o.tienda,o.tr,o.sapId||'',o.cerrada?'Cerrada':(o.vencida?'Vencida':'Abierta'),o.contados,o.total,o.pctExactitud===null?'':o.pctExactitud,o.diferencias,o.sobrantes||0,o.faltantes||0,o.fechaCierre?new Date(o.fechaCierre).toLocaleString('es-MX'):'',o.cerradoPor||'',o.duracionMin===null||o.duracionMin===undefined?'':o.duracionMin]);
   const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -1991,7 +2000,7 @@ async function loadCategorias(){
 }
 function renderCategoriasChart(data){
   const area=document.getElementById('rep-cat-chart-area');
-  if(!data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-tags"></i>Aún no hay conteos registrados</div>';return;}
+  if(!data.length){area.innerHTML='<div class="empty-state"><i class="ti ti-checks"></i>Sin diferencias por categoría (o aún no hay conteos)</div>';return;}
   const rows=data.slice(0,15); // top 15 por impacto (ya vienen ordenadas desde el backend)
   const maxVal=Math.max(1,...rows.map(d=>d.diferencias));
   const labelW=140,plotW=380,padR=46,padT=8,padB=8,rowH=28;
